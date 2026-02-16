@@ -1,5 +1,5 @@
 
-fromm src.game import game
+from src.game import Game
 
 def main():
     game = Game("maze.txt")

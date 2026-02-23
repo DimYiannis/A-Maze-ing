@@ -17,17 +17,35 @@ from src.events import register_events
 
 class Game:
     def __init__(self, map_file):
+
         self.map = load_map(map_file)
 
-        self.mlx_lib = m
-        self.mlx =  self.mlx_lib.mlx_init()
-        self.win =  self.mlx_lib.mlx_new_window(self.mlx, 1800, 1600, "Maze")
+        self.mlx_lib = mlx.Mlx()
+
+        self.mlx = self.mlx_lib.mlx_init()
+
+        self.win = self.mlx_lib.mlx_new_window(
+            self.mlx, 1800, 1600, "Maze"
+        )
+
+        self.img = self.mlx_lib.mlx_new_image(
+            self.mlx, 1800, 1600
+        )
+
+        self.buffer = bytearray(1800 * 1600 * 4)
+
+    def render(self):
+
+        self.render()
+
+        draw_map(self)
+
+        self.mlx_lib.mlx_put_image_to_window(
+            self.mlx, self.win, self.img, 0, 0
+        )
 
     def run(self):
-        # draw big visible square
-        for y in range(100, 200):
-            for x in range(100, 200):
-                self.mlx_lib.mlx_pixel_put(self.mlx, self.win, x, y, 0xFF0000)
-        #draw_map(self)
+
         register_events(self)
+
         self.mlx_lib.mlx_loop(self.mlx)

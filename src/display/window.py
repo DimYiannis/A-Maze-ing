@@ -49,10 +49,10 @@ ZOOM_MAX:  float = 4.0
 # ── X11 keycodes ──────────────────────────────────────────────────────────────
 
 KEY_ESC:   int = 65307
-KEY_Q:     int = 113
-KEY_SPACE: int = 32
-KEY_C:     int = 99
-KEY_4:     int = 52
+KEY_1:     int = 49     # regen — no-op in display-only mode
+KEY_2:     int = 50     # toggle path
+KEY_3:     int = 51     # cycle colour theme
+KEY_4:     int = 52     # quit
 KEY_PLUS:  int = 61     # '=' key (same physical key as '+')
 KEY_PLUS2: int = 43     # '+' on numpad
 KEY_MINUS: int = 45
@@ -94,6 +94,27 @@ def _put_pixel(
     buf[i + 3] = 0
 
 
+def _tile_to_bgr(tile: bytearray, tile_px: int) -> bytearray:
+    """Convert a tile RGBA bytearray to BGRX for direct MLX blitting.
+
+    Converts once per tile per theme/zoom change and caches the result.
+
+    Args:
+        tile:    RGBA bytearray (R,G,B,A order).
+        tile_px: Tile size in pixels.
+
+    Returns:
+        BGRX bytearray (B,G,R,0 order), same length.
+    """
+    out = bytearray(len(tile))
+    for i in range(0, len(tile), 4):
+        out[i]     = tile[i + 2]  # B
+        out[i + 1] = tile[i + 1]  # G
+        out[i + 2] = tile[i]      # R
+        out[i + 3] = 0
+    return out
+
+
 def _blit_tile(
     buf: memoryview,
     tile: bytearray,
@@ -104,14 +125,11 @@ def _blit_tile(
     win_w: int,
     win_h: int,
 ) -> None:
-    """Copy a pre-rendered RGBA tile bytearray into the MLX memoryview.
-
-    Clips to window bounds. Tile bytearray is RGBA (R,G,B,A order),
-    but MLX wants B,G,R,0 — so channels are swapped on write.
+    """Copy a pre-converted BGRX tile into the MLX memoryview row by row.
 
     Args:
         buf:       Writable MLX image memoryview.
-        tile:      RGBA bytearray from tiles.render_tile().
+        tile:      BGRX bytearray (pre-converted by _tile_to_bgr).
         dx:        Destination left column in the window.
         dy:        Destination top row in the window.
         tile_px:   Tile size in pixels at current zoom.
@@ -119,20 +137,22 @@ def _blit_tile(
         win_w:     Window width (for clipping).
         win_h:     Window height (for clipping).
     """
+    max_y = win_h - HUD_H
+    # Clip x range once for all rows
+    src_x0 = max(0, -dx)
+    src_x1 = min(tile_px, win_w - dx)
+    if src_x0 >= src_x1:
+        return
+    dst_x0 = dx + src_x0
+    nbytes  = (src_x1 - src_x0) * 4
+
     for ty in range(tile_px):
         wy = dy + ty
-        if not (HUD_H <= wy < win_h):
+        if not (0 <= wy < max_y):
             continue
-        for tx in range(tile_px):
-            wx = dx + tx
-            if not (0 <= wx < win_w):
-                continue
-            si = (ty * tile_px + tx) * 4
-            i  = wy * size_line + wx * 4
-            buf[i]     = tile[si + 2]   # B
-            buf[i + 1] = tile[si + 1]   # G
-            buf[i + 2] = tile[si]       # R
-            buf[i + 3] = 0
+        si = (ty * tile_px + src_x0) * 4
+        di = wy * size_line + dst_x0 * 4
+        buf[di: di + nbytes] = tile[si: si + nbytes]
 
 
 def _fill_rect(
@@ -281,7 +301,14 @@ class MazeDisplay:
         )
         img_ptr = m.mlx_new_image(mlx_ptr, WIN_W, WIN_H)
 
-        buf, _bpp, size_line, _fmt = m.mlx_get_data_addr(img_ptr)
+        buf, bpp, size_line, fmt = m.mlx_get_data_addr(img_ptr)
+
+        print(f"bpp={bpp} size_line={size_line} fmt={fmt}")
+
+        # Draw a single bright red pixel at (100, 100) every possible way
+        i = 100 * size_line + 100 * 4
+        buf[i], buf[i+1], buf[i+2], buf[i+3] = 255, 0, 0, 0    # R first
+        m.mlx_put_image_to_window(mlx_ptr, win_ptr, img_ptr, 0, 0)
 
         self._mlx_ptr  = mlx_ptr
         self._win_ptr  = win_ptr
@@ -305,17 +332,14 @@ class MazeDisplay:
             keycode: X11 keycode.
             _param:  Unused hook parameter.
         """
-        if keycode in (KEY_ESC, KEY_Q):
+        if keycode in (KEY_ESC, KEY_4):
             os._exit(0)
-        elif keycode == KEY_SPACE:
+        elif keycode == KEY_2:
             self.show_path = not self.show_path
             self._dirty = True
-        elif keycode == KEY_C:
+        elif keycode == KEY_3:
             self.theme_idx = (self.theme_idx + 1) % len(THEMES)
             self._tile_cache = {}
-            self._dirty = True
-        elif keycode == KEY_4:
-            self.show_42 = not self.show_42
             self._dirty = True
         elif keycode in (KEY_PLUS, KEY_PLUS2):
             self.zoom = min(ZOOM_MAX, round(self.zoom + ZOOM_STEP, 1))
@@ -364,7 +388,7 @@ class MazeDisplay:
     # ── Layout ────────────────────────────────────────────────────────────────
 
     def _fit_to_window(self) -> None:
-        """Auto-zoom and centre the maze to fill the window."""
+        """Auto-zoom and centre the maze to fill the window (HUD at bottom)."""
         usable_h = WIN_H - HUD_H
         zoom_x = WIN_W / (self.maze.cols * TILE_SIZE)
         zoom_y = usable_h / (self.maze.rows * TILE_SIZE)
@@ -372,7 +396,7 @@ class MazeDisplay:
 
         tile_px = self._tile_px()
         self.offset_x = (WIN_W - self.maze.cols * tile_px) // 2
-        self.offset_y = HUD_H + (usable_h - self.maze.rows * tile_px) // 2
+        self.offset_y = (usable_h - self.maze.rows * tile_px) // 2
         self._tile_cache = {}
         self._dirty = True
 
@@ -393,12 +417,11 @@ class MazeDisplay:
             return
         base = build_tile_cache(THEMES[self.theme_idx])
         if tile_px == TILE_SIZE:
-            self._tile_cache = base
+            scaled = base
         else:
-            self._tile_cache = {
-                hv: _scale_tile(buf, tile_px)
-                for hv, buf in base.items()
-            }
+            scaled = {hv: _scale_tile(buf, tile_px) for hv, buf in base.items()}
+        # Pre-convert RGBA → BGRX for fast row-slice blitting
+        self._tile_cache = {hv: _tile_to_bgr(buf, tile_px) for hv, buf in scaled.items()}
         self._cached_tile_px = tile_px
 
     # ── Rendering ─────────────────────────────────────────────────────────────
@@ -413,15 +436,11 @@ class MazeDisplay:
         tile_px   = self._tile_px()
         self._ensure_cache()
 
-        # Background
+        # Background — fill entire buffer at once using slice assignment
         fl = THEMES[self.theme_idx].floor
+        row = bytes([fl[2], fl[1], fl[0], 0] * WIN_W)   # one row BGRX
         for y in range(WIN_H):
-            for x in range(WIN_W):
-                i = y * sl + x * 4
-                buf[i]     = fl[2]   # B
-                buf[i + 1] = fl[1]   # G
-                buf[i + 2] = fl[0]   # R
-                buf[i + 3] = 0
+            buf[y * sl: y * sl + WIN_W * 4] = row
 
         # Tiles
         for r in range(self.maze.rows):
@@ -473,7 +492,7 @@ class MazeDisplay:
         for r, c in self.maze.pattern42_cells:
             x0 = c * tile_px + self.offset_x
             y0 = r * tile_px + self.offset_y
-            for y in range(max(HUD_H, y0), min(WIN_H, y0 + tile_px)):
+            for y in range(max(0, y0), min(WIN_H - HUD_H, y0 + tile_px)):
                 for x in range(max(0, x0), min(WIN_W, x0 + tile_px)):
                     _blend_pixel(
                         self._buf, x, y, pr, pg, pb, pa,
@@ -569,40 +588,37 @@ class MazeDisplay:
         if not (self._m and self._mlx_ptr and self._win_ptr and self._buf):
             return
 
-        # HUD background
+        # HUD background — at the bottom of the window
+        hud_top = WIN_H - HUD_H
         _fill_rect(
             self._buf,
-            0, 0, WIN_W, HUD_H,
+            0, hud_top, WIN_W, WIN_H,
             22, 22, 28,
             self._size_line, WIN_W, WIN_H,
         )
-        # Divider line
+        # Divider line at top of HUD
         for x in range(WIN_W):
-            i = (HUD_H - 1) * self._size_line + x * 4
+            i = hud_top * self._size_line + x * 4
             self._buf[i]     = 78
             self._buf[i + 1] = 60
             self._buf[i + 2] = 55
             self._buf[i + 3] = 0
 
         # Text via mlx_string_put (rendered into the window after image blit)
-        theme   = THEMES[self.theme_idx]
-        path_s  = "ON" if self.show_path else "OFF"
-        p42_s   = "ON" if self.show_42 else "OFF"
-        zoom_s  = f"{self.zoom:.1f}x"
-        fname   = os.path.basename(self.filepath)
+        theme  = THEMES[self.theme_idx]
+        path_s = "ON" if self.show_path else "OFF"
+        zoom_s = f"{self.zoom:.1f}x"
 
         items = [
-            (fname,                              0xC3C8D7),
-            (f"{self.maze.cols}x{self.maze.rows}", 0xC3C8D7),
-            (f"[SPC] Path:{path_s}",             0x4BD750 if self.show_path else 0xC3C8D7),
-            (f"[C] {theme.name}",                0x64B4FF),
-            (f"[4] 42:{p42_s}",                  0xFFC837 if self.show_42 else 0xC3C8D7),
-            ("[+/-] Zoom",                       0xC3C8D7),
-            (zoom_s,                             0xC3C8D7),
-            ("[ESC] Quit",                       0xC85A5A),
+            ("1:regen",                          0xC3C8D7),
+            (f"2:path",                          0x4BD750 if self.show_path else 0xC3C8D7),
+            (f"3:color",                         0x64B4FF),
+            ("4:quit",                           0xC85A5A),
+            (f"[+/-] {zoom_s}",                  0xC3C8D7),
+            (f"[arrows] pan",                    0xC3C8D7),
         ]
         x = 10
-        y = (HUD_H - 13) // 2
+        y = hud_top + (HUD_H - 13) // 2
         for text, color in items:
             self._m.mlx_string_put(
                 self._mlx_ptr, self._win_ptr, x, y, color, text
@@ -638,7 +654,7 @@ class MazeDisplay:
         """
         if self._buf is None:
             return
-        for y in range(max(HUD_H, y0), min(WIN_H, y1)):
+        for y in range(max(0, y0), min(WIN_H - HUD_H, y1)):
             for x in range(max(0, x0), min(WIN_W, x1)):
                 _blend_pixel(
                     self._buf, x, y, r, g, b, a,

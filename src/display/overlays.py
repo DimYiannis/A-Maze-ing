@@ -487,11 +487,11 @@ def draw_hud(
     items: list[tuple[str, tuple[int, int, int]]] = [
         (filename,                                         txt),
         (f"{cols}x{rows}",                                 txt),
-        (f"[SPC] Path:{path_state}", on_c if show_path else txt),
-        (f"[C] {theme_name}",                              acc),
-        (f"[4] 42:{p42_state}",       gold if show_42 else txt),
-        ("[+/-] Zoom",                                     txt),
-        (f"z={zoom_str}x",                                 txt),
+        (f"[SPC] Path:{path_state} ", on_c if show_path else txt),
+        (f" [C] {theme_name} ",                              acc),
+        (f" [4] 42:{p42_state} ",       gold if show_42 else txt),
+        (" [+/-] Zoom ",                                     txt),
+        (f"{zoom_str}x",                                 txt),
         ("[ESC] Quit",                                    warn),
     ]
 

@@ -25,12 +25,12 @@ import random
 from typing import NamedTuple
 
 
-# ── Sizes ─────────────────────────────────────────────────────────────────────
+# -- Sizes -------------------------------------------------------
 
 TILE_SIZE: int = 64   # tile width and height in pixels
 WALL_T:    int = 22   # wall strip thickness in pixels
 
-# ── Bit masks ─────────────────────────────────────────────────────────────────
+# -- Bit masks -------------------------------------------------------
 
 N_BIT: int = 0b0001
 E_BIT: int = 0b0010
@@ -38,7 +38,7 @@ S_BIT: int = 0b0100
 W_BIT: int = 0b1000
 
 
-# ── Colour themes ─────────────────────────────────────────────────────────────
+# -- Colour themes -------------------------------------------------------
 
 class Theme(NamedTuple):
     """A wall colour theme.
@@ -67,7 +67,7 @@ THEMES: list[Theme] = [
 ]
 
 
-# ── Drawing primitives ────────────────────────────────────────────────────────
+# -- Drawing primitives -------------------------------------------------------
 
 def _put(
     buf: bytearray,
@@ -223,7 +223,7 @@ def _bevel(
                 _put(buf, x1 - 1 - i, y, *sc)
 
 
-# ── Tile rendering ────────────────────────────────────────────────────────────
+# -- Tile rendering -------------------------------------------------------
 
 def _draw_wall_strip(
     buf: bytearray,

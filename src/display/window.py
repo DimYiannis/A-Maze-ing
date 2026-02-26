@@ -27,7 +27,7 @@ from .tiles import TILE_SIZE, THEMES, build_tile_cache
 from .overlays import HUD_H, ENTRY_RINGS, EXIT_RINGS
 
 
-# ── Window settings ───────────────────────────────────────────────────────────
+# -- Window settings -------------------------------------------------------
 
 WIN_W:     int   = 1400
 WIN_H:     int   = 900
@@ -36,7 +36,7 @@ ZOOM_STEP: float = 0.1
 ZOOM_MIN:  float = 0.2
 ZOOM_MAX:  float = 4.0
 
-# ── X11 keycodes ──────────────────────────────────────────────────────────────
+# -- X11 keycodes -------------------------------------------------------
 
 KEY_ESC:   int = 65307
 KEY_2:     int = 50     # toggle path
@@ -51,7 +51,7 @@ KEY_LEFT:  int = 65361
 KEY_RIGHT: int = 65363
 
 
-# ── Pixel helpers ─────────────────────────────────────────────────────────────
+# -- Pixel helpers -------------------------------------------------------
 
 def _put(buf: memoryview, x: int, y: int,
          r: int, g: int, b: int, sl: int) -> None:
@@ -154,7 +154,7 @@ class MazeDisplay:
         self._buf:     Optional[memoryview] = None
         self._sl:      int = 0   # size_line
 
-    # ── Public ────────────────────────────────────────────────────────────────
+    # -- Public -------------------------------------------------------
 
     def run(self) -> None:
         m = mlx_module.Mlx()
@@ -180,7 +180,7 @@ class MazeDisplay:
         m.mlx_loop_hook(mlx_ptr, self._on_loop, None)
         m.mlx_loop(mlx_ptr)
 
-    # ── Input ─────────────────────────────────────────────────────────────────
+    # -- Input -------------------------------------------------------
 
     def _on_key(self, keycode: int, _param: object) -> None:
         if keycode in (KEY_ESC, KEY_4):
@@ -227,7 +227,7 @@ class MazeDisplay:
             self._draw_hud_text()
         self._dirty = False
 
-    # ── Layout ────────────────────────────────────────────────────────────────
+    # -- Layout -------------------------------------------------------
 
     def _fit_to_window(self) -> None:
         usable_h = WIN_H - HUD_H
@@ -243,7 +243,7 @@ class MazeDisplay:
     def _tile_px(self) -> int:
         return max(4, int(TILE_SIZE * self.zoom))
 
-    # ── Cache ─────────────────────────────────────────────────────────────────
+    # -- Cache -------------------------------------------------------
 
     def _ensure_cache(self) -> None:
         tile_px = self._tile_px()
@@ -256,7 +256,7 @@ class MazeDisplay:
         self._tile_cache = {hv: _tile_to_bgr(t) for hv, t in scaled.items()}
         self._cached_tile_px = tile_px
 
-    # ── Rendering ─────────────────────────────────────────────────────────────
+    # -- Rendering -------------------------------------------------------
 
     def _render(self) -> None:
         if self._buf is None:
@@ -419,7 +419,7 @@ class MazeDisplay:
                 break
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# -- CLI -------------------------------------------------------
 
 def main() -> None:
     import argparse

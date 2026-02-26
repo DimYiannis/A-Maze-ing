@@ -404,11 +404,11 @@ class MazeDisplay:
         hud_y  = WIN_H - HUD_H + (HUD_H - 13) // 2
 
         items = [
-            (f"1:regen",               0xC3C8D7),
-            (f"2:path:{path_s}",       0x4BD750 if self.show_path else 0xC3C8D7),
-            (f"3:{theme.name}",        0x64B4FF),
-            (f"4:quit",                0xC85A5A),
-            (f"+/-:{zoom_s}",          0xC3C8D7),
+            (f"1:regen ",               0xC3C8D7),
+            (f"2:path:{path_s} ",       0x4BD750 if self.show_path else 0xC3C8D7),
+            (f"3:{theme.name} ",        0x64B4FF),
+            (f"4:quit ",                0xC85A5A),
+            (f"+/-:{zoom_s} ",          0xC3C8D7),
             (f"arrows:pan",            0xC3C8D7),
         ]
         x = 12

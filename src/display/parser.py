@@ -170,6 +170,7 @@ def parse_maze_file(filepath: str) -> MazeData:
     grid_part, meta_part = parts
 
     # -- Grid -------------------------------------------------------
+
     lines = grid_part.strip().splitlines()
     if not lines:
         raise ValueError("Grid section is empty.")
@@ -191,6 +192,7 @@ def parse_maze_file(filepath: str) -> MazeData:
         grid.append(row)
 
     # -- Metadata -------------------------------------------------------
+
     meta = meta_part.strip().splitlines()
     if len(meta) < 3:
         raise ValueError(

@@ -12,7 +12,7 @@ import math
 from .tiles import TILE_SIZE
 
 
-# ── Colours ───────────────────────────────────────────────────────────────────
+# -- Colours -------------------------------------------------------
 
 PATH_COLOR:      tuple[int, int, int, int] = (80,  160, 255, 160)
 PATTERN42_COLOR: tuple[int, int, int, int] = (255, 200, 0,   80)
@@ -38,7 +38,7 @@ PORTAL_RADII: list[int] = [14, 10, 7, 4, 2]
 HUD_H: int = 46
 
 
-# ── Pixel primitives ──────────────────────────────────────────────────────────
+# -- Pixel primitives -------------------------------------------------------
 
 def _put(
     buf: bytearray,
@@ -211,7 +211,7 @@ def _draw_text(
     return cx
 
 
-# ── Minimal 5×7 bitmap font (printable ASCII subset) ─────────────────────────
+# -- Minimal 5×7 bitmap font (printable ASCII subset) ----------------------
 # Each character is 7 bytes; each byte is a 5-bit row bitmask.
 # Generated from a standard 5x7 pixel font — no copyright applies to
 # simple bitmap glyph data of this kind.
@@ -296,7 +296,7 @@ _FONT: dict[str, list[int]] = {
 }
 
 
-# ── Path overlay ──────────────────────────────────────────────────────────────
+# -- Path overlay -------------------------------------------------------
 
 def draw_path(
     buf: bytearray,
@@ -365,7 +365,7 @@ def draw_path(
         _fill_circle(buf, cx, cy, h + 1, pr, pg, pb, pa, width, height)
 
 
-# ── Portal drawing ────────────────────────────────────────────────────────────
+# -- Portal drawing -------------------------------------------------------
 
 def draw_portal(
     buf: bytearray,
@@ -407,7 +407,7 @@ def draw_portal(
                 _put(buf, cx + dx, cy + 3 + i, ar, ag, ab, 255, width, height)
 
 
-# ── '42' highlight ────────────────────────────────────────────────────────────
+# -- '42' highlight -------------------------------------------------------
 
 def draw_42_highlight(
     buf: bytearray,
@@ -439,7 +439,7 @@ def draw_42_highlight(
         )
 
 
-# ── HUD ───────────────────────────────────────────────────────────────────────
+# -- HUD -------------------------------------------------------
 
 def draw_hud(
     buf: bytearray,

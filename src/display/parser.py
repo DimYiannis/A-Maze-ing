@@ -19,7 +19,7 @@ import os
 from dataclasses import dataclass, field
 
 
-# ── Data class ────────────────────────────────────────────────────────────────
+# -- Data class -------------------------------------------------------
 
 @dataclass
 class MazeData:
@@ -56,7 +56,7 @@ class MazeData:
         }
 
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
+# -- Internal helpers -------------------------------------------------------
 
 _DELTA: dict[str, tuple[int, int]] = {
     "N": (-1,  0),
@@ -138,7 +138,7 @@ def _path_from_directions(
     return path
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# -- Public API -------------------------------------------------------
 
 def parse_maze_file(filepath: str) -> MazeData:
     """Parse a maze output file and return a MazeData instance.
@@ -169,7 +169,7 @@ def parse_maze_file(filepath: str) -> MazeData:
         )
     grid_part, meta_part = parts
 
-    # ── Grid ──────────────────────────────────────────────────────────────────
+    # -- Grid -------------------------------------------------------
     lines = grid_part.strip().splitlines()
     if not lines:
         raise ValueError("Grid section is empty.")
@@ -190,7 +190,7 @@ def parse_maze_file(filepath: str) -> MazeData:
             row.append(int(ch, 16))
         grid.append(row)
 
-    # ── Metadata ──────────────────────────────────────────────────────────────
+    # -- Metadata -------------------------------------------------------
     meta = meta_part.strip().splitlines()
     if len(meta) < 3:
         raise ValueError(

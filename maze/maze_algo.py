@@ -1,3 +1,5 @@
+import random
+
 NORTH = 1
 EAST = 2
 SOUTH = 4
@@ -43,6 +45,20 @@ def remove_wall(maze: list, yindex: int, xindex: int, direction: int) -> None:
 
 def create_grid(width: int, height: int) -> list[list]:
     return [[15 for _ in range(width)] for _ in range(height)]
+
+
+def generate(maze: list, y: int, x: int, visited: list[list]) -> None:
+    width = len(maze[0])
+    height = len(maze)
+
+    direction_list = [NORTH, EAST, SOUTH, WEST]
+    random.shuffle(direction_list)
+    for direction in direction_list:
+        if direction 
+    if 0 <= y < height and 0 <= x < width and not visited[y][x]:
+            remove_wall(maze, x, y, random.choice(direction_list))
+            visited[x][y]
+            generate(maze, neighboury_y, neighbour_x, visited)
 
 
 def main() -> None:

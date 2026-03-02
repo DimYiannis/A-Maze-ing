@@ -51,7 +51,7 @@ class MazeData:
         }
 
 
-# -- Internal helpers -------------------------------------------------------
+# -- helpers -------------------------------------------------------
 
 DIRECTION_OFFSETS: dict[str, tuple[int, int]] = {
     "N": (-1,  0),
@@ -61,7 +61,7 @@ DIRECTION_OFFSETS: dict[str, tuple[int, int]] = {
 }
 
 
-def _parse_coord(
+def parse_coord(
     raw: str,
     label: str,
     rows: int,
@@ -96,7 +96,7 @@ def _parse_coord(
     return (row, col)
 
 
-def _path_from_directions(
+def path_from_directions(
     start: tuple[int, int],
     directions: str,
     rows: int,
@@ -187,11 +187,11 @@ def parse_maze_file(filepath: str) -> MazeData:
             f"Need 3 metadata lines (entry, exit, path), found {len(meta)}"
         )
 
-    entry = _parse_coord(meta[0], "ENTRY", rows, cols)
-    exit_ = _parse_coord(meta[1], "EXIT",  rows, cols)
+    entry = parse_coord(meta[0], "ENTRY", rows, cols)
+    exit_ = parse_coord(meta[1], "EXIT",  rows, cols)
 
     try:
-        path = _path_from_directions(entry, meta[2].strip(), rows, cols)
+        path = path_from_directions(entry, meta[2].strip(), rows, cols)
     except ValueError as exc:
         raise ValueError(f"Invalid path: {exc}") from exc
 

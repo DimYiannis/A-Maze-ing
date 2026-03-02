@@ -1,24 +1,24 @@
 """
-display/tiles.py
-================
-Renders all 16 hex maze tiles as RGBA bytearrays — no external libs.
+    display/tiles.py
 
-Each tile is TILE_SIZE × TILE_SIZE pixels, stored as a flat bytearray
-of R, G, B, A bytes in row-major order.
+    renders all 16 hex maze tiles as RGBA bytearrays — no external libs.
 
-This format is compatible with mlx_image_t.pixels (MLX42).
-Call build_tile_cache() to get all 16 pre-rendered tiles at once.
+    each tile is TILE_SIZE × TILE_SIZE pixels, stored as a flat bytearray
+    of R, G, B, A bytes in row-major order.
 
-Tile wall encoding (same as the maze file):
-    Bit 0 (LSB) = North wall
-    Bit 1       = East  wall
-    Bit 2       = South wall
-    Bit 3       = West  wall
+    this format is compatible with mlx_image_t.pixels (MLX42).
+    call build_tile_cache() to get all 16 pre-rendered tiles at once.
 
-Visual style:
-    - Floor: flat dark colour, no texture
-    - Walls: smooth light colour with a soft brightness bevel on edges
-    - No brick lines, no grout
+    tile wall encoding (same as the maze file):
+        bit 0 (LSB) = North wall
+        bit 1       = East  wall
+        bit 2       = South wall
+        bit 3       = West  wall
+
+    Visual style:
+        - Floor: flat dark colour, no texture
+        - Walls: smooth light colour with a soft brightness bevel on edges
+        - No brick lines, no grout
 """
 
 import random
@@ -41,16 +41,16 @@ W_BIT: int = 0b1000
 # -- Colour themes -------------------------------------------------------
 
 class Theme(NamedTuple):
-    """A wall colour theme.
+    """
+    wall colour theme using pseudo-3D shading
 
-    Attributes:
+    attributes:
         name:        Display name for the HUD.
         floor:       RGB of the passage floor.
         wall:        RGB of the wall face.
         wall_hi:     RGB of the bright bevel edge.
         wall_shadow: RGB of the dark bevel edge.
     """
-
     name:        str
     floor:       tuple[int, int, int]
     wall:        tuple[int, int, int]
@@ -59,11 +59,11 @@ class Theme(NamedTuple):
 
 
 THEMES: list[Theme] = [
-    Theme("Stone",   (50,  50,  53),  (150, 157, 167), (190, 198, 210), (100, 106, 116)),
-    Theme("Dungeon", (30,  28,  35),  (100,  80,  60), (140, 115,  88), ( 60,  48,  36)),
-    Theme("Ice",     (20,  30,  45),  (140, 175, 210), (200, 225, 245), ( 80, 115, 155)),
-    Theme("Lava",    (25,  15,  10),  (160,  70,  20), (220, 120,  40), ( 90,  35,  10)),
-    Theme("Forest",  (20,  28,  18),  ( 70, 105,  55), (105, 145,  80), ( 38,  58,  28)),
+    Theme("Grey",   (50,  50,  53),  (150, 157, 167), (190, 198, 210), (100, 106, 116)),
+    Theme("Brown", (30,  28,  35),  (100,  80,  60), (140, 115,  88), ( 60,  48,  36)),
+    Theme("Blue",     (20,  30,  45),  (140, 175, 210), (200, 225, 245), ( 80, 115, 155)),
+    Theme("Orange",    (25,  15,  10),  (160,  70,  20), (220, 120,  40), ( 90,  35,  10)),
+    Theme("Green",  (20,  28,  18),  ( 70, 105,  55), (105, 145,  80), ( 38,  58,  28)),
 ]
 
 
@@ -78,16 +78,17 @@ def _put(
     b: int,
     stride: int = TILE_SIZE,
 ) -> None:
-    """Write one opaque RGBA pixel into a bytearray buffer.
+    """
+        write one opaque RGBA pixel into a bytearray buffer.
 
-    Args:
-        buf:    Target bytearray (RGBA, row-major).
-        x:      Pixel column.
-        y:      Pixel row.
-        r:      Red channel (0–255).
-        g:      Green channel (0–255).
-        b:      Blue channel (0–255).
-        stride: Row width in pixels (default TILE_SIZE).
+        args:
+            buf:    Target bytearray (RGBA, row-major).
+            x:      Pixel column.
+            y:      Pixel row.
+            r:      Red channel (0–255).
+            g:      Green channel (0–255).
+            b:      Blue channel (0–255).
+            stride: Row width in pixels (default TILE_SIZE).
     """
     i = (y * stride + x) * 4
     buf[i]     = r
@@ -104,15 +105,16 @@ def _fill_rect(
     y1: int,
     color: tuple[int, int, int],
 ) -> None:
-    """Fill a rectangle with a solid colour.
+    """
+        fill a rectangle with a solid colour.
 
-    Args:
-        buf:   Target bytearray (RGBA, TILE_SIZE stride).
-        x0:    Left column (inclusive).
-        y0:    Top row (inclusive).
-        x1:    Right column (exclusive).
-        y1:    Bottom row (exclusive).
-        color: RGB tuple.
+        args:
+            buf:   Target bytearray (RGBA, TILE_SIZE stride).
+            x0:    Left column (inclusive).
+            y0:    Top row (inclusive).
+            x1:    Right column (exclusive).
+            y1:    Bottom row (exclusive).
+            color: RGB tuple.
     """
     r, g, b = color
     for y in range(y0, y1):
@@ -125,15 +127,16 @@ def _lerp_color(
     b: tuple[int, int, int],
     t: float,
 ) -> tuple[int, int, int]:
-    """Linearly interpolate between two RGB colours.
+    """
+    linearly interpolate between two RGB colours.
 
-    Args:
+    args:
         a: Start colour.
         b: End colour.
         t: Blend factor in [0.0, 1.0] (0 = a, 1 = b).
 
-    Returns:
-        Interpolated RGB tuple.
+    returns:
+        interpolated RGB tuple.
     """
     return (
         int(a[0] + (b[0] - a[0]) * t),
@@ -152,17 +155,18 @@ def _noisy_fill(
     strength: int,
     rng: random.Random,
 ) -> None:
-    """Fill a rectangle with per-pixel random brightness noise.
+    """
+        fill a rectangle with per-pixel random brightness noise.
 
-    Args:
-        buf:      Target bytearray.
-        x0:       Left column (inclusive).
-        y0:       Top row (inclusive).
-        x1:       Right column (exclusive).
-        y1:       Bottom row (exclusive).
-        base:     Base RGB colour.
-        strength: Max noise magnitude per channel (±).
-        rng:      Random instance for reproducibility.
+        args:
+            buf:      Target bytearray.
+            x0:       Left column (inclusive).
+            y0:       Top row (inclusive).
+            x1:       Right column (exclusive).
+            y1:       Bottom row (exclusive).
+            base:     Base RGB colour.
+            strength: Max noise magnitude per channel (±).
+            rng:      Random instance for reproducibility.
     """
     br, bg, bb = base
     for y in range(y0, y1):
@@ -185,21 +189,22 @@ def _bevel(
     shadow: tuple[int, int, int],
     depth: int = 5,
 ) -> None:
-    """Apply a soft bevel gradient on all four edges of a rectangle.
+    """
+        apply a soft bevel gradient on all four edges of a rectangle.
 
-    The top and left edges fade toward hi, the bottom and right toward
-    shadow. The effect gives depth to flat wall strips without hard lines.
+        the top and left edges fade toward hi, the bottom and right toward
+        shadow. The effect gives depth to flat wall strips without hard lines.
 
-    Args:
-        buf:    Target bytearray.
-        x0:     Left column (inclusive).
-        y0:     Top row (inclusive).
-        x1:     Right column (exclusive).
-        y1:     Bottom row (exclusive).
-        base:   Base wall colour (already drawn in the rectangle).
-        hi:     Bright highlight colour.
-        shadow: Dark shadow colour.
-        depth:  Number of pixels the gradient extends inward.
+        args:
+            buf:    Target bytearray.
+            x0:     Left column (inclusive).
+            y0:     Top row (inclusive).
+            x1:     Right column (exclusive).
+            y1:     Bottom row (exclusive).
+            base:   Base wall colour (already drawn in the rectangle).
+            hi:     Bright highlight colour.
+            shadow: Dark shadow colour.
+            depth:  Number of pixels the gradient extends inward.
     """
     for i in range(depth):
         t = (1.0 - i / depth) * 0.7
@@ -234,18 +239,19 @@ def _draw_wall_strip(
     theme: Theme,
     seed: int,
 ) -> None:
-    """Draw one wall strip (or corner fill) into the tile buffer.
+    """
+        draw one wall strip (or corner fill) into the tile buffer.
 
-    First fills with noisy base colour, then applies a soft bevel.
+        first fills with noisy base colour, then applies a soft bevel.
 
-    Args:
-        buf:   RGBA bytearray of size TILE_SIZE × TILE_SIZE × 4.
-        x0:    Left column (inclusive).
-        y0:    Top row (inclusive).
-        x1:    Right column (exclusive).
-        y1:    Bottom row (exclusive).
-        theme: Active colour theme.
-        seed:  Noise seed — keeps textures reproducible per tile.
+        args:
+            buf:   RGBA bytearray of size TILE_SIZE × TILE_SIZE × 4.
+            x0:    Left column (inclusive).
+            y0:    Top row (inclusive).
+            x1:    Right column (exclusive).
+            y1:    Bottom row (exclusive).
+            theme: Active colour theme.
+            seed:  Noise seed — keeps textures reproducible per tile.
     """
     if x1 <= x0 or y1 <= y0:
         return
@@ -255,14 +261,15 @@ def _draw_wall_strip(
 
 
 def render_tile(hv: int, theme: Theme) -> bytearray:
-    """Render a single maze tile as a flat RGBA bytearray.
+    """
+        render a single maze tile as a flat RGBA bytearray.
 
-    Args:
-        hv:    Hex value (0–15) encoding which walls are closed.
-        theme: Active colour theme.
+        args:
+            hv:    Hex value (0–15) encoding which walls are closed.
+            theme: Active colour theme.
 
-    Returns:
-        bytearray of length TILE_SIZE × TILE_SIZE × 4 (RGBA, row-major).
+        return:
+            bytearray of length TILE_SIZE × TILE_SIZE × 4 (RGBA, row-major).
     """
     T  = TILE_SIZE
     wt = WALL_T
@@ -301,12 +308,13 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
 
 
 def build_tile_cache(theme: Theme) -> dict[int, bytearray]:
-    """Pre-render all 16 tiles for the given theme.
+    """
+        pre-render all 16 tiles for the given theme.
 
-    Args:
-        theme: Active colour theme.
+        args:
+            theme: Active colour theme.
 
-    Returns:
-        Dict mapping hex value 0–15 to an RGBA bytearray.
+        returns:
+        dict mapping hex value 0–15 to an RGBA bytearray.
     """
     return {hv: render_tile(hv, theme) for hv in range(16)}

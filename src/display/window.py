@@ -27,7 +27,7 @@ from .tiles import TILE_SIZE, THEMES, build_tile_cache
 from .overlays import HUD_H, ENTRY_RINGS, EXIT_RINGS
 
 
-# ── Window settings ───────────────────────────────────────────────────────────
+# --- Window settings -------------------------------------------------------
 
 WIN_W:     int   = 1400
 WIN_H:     int   = 900
@@ -36,7 +36,7 @@ ZOOM_STEP: float = 0.1
 ZOOM_MIN:  float = 0.2
 ZOOM_MAX:  float = 4.0
 
-# ── X11 keycodes ──────────────────────────────────────────────────────────────
+# --- X11 keycodes -------------------------------------------------------
 
 KEY_ESC:   int = 65307
 KEY_1:     int = 49     # toggle '42' highlight
@@ -52,7 +52,7 @@ KEY_LEFT:  int = 65361
 KEY_RIGHT: int = 65363
 
 
-# ── Pixel helpers ─────────────────────────────────────────────────────────────
+# --- Pixel helpers -------------------------------------------------------
 
 def _put(buf: memoryview, x: int, y: int,
          r: int, g: int, b: int, sl: int) -> None:
@@ -129,9 +129,9 @@ def _scale_tile(src: bytearray, target_px: int) -> bytearray:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class MazeDisplay:
-    """Interactive maze display using mlx_CLXV.
-
-    Controls:  2=path  3=colour  4/ESC=quit  +/-=zoom  arrows=pan
+    """
+        maze display
+        controls:  2=path  3=colour  4/ESC=quit  +/-=zoom  arrows=pan
     """
 
     def __init__(self, filepath: str, theme_idx: int = 0) -> None:
@@ -155,7 +155,7 @@ class MazeDisplay:
         self._buf:     Optional[memoryview] = None
         self._sl:      int = 0   # size_line
 
-    # ── Public ────────────────────────────────────────────────────────────────
+    # --- Public -------------------------------------------------------
 
     def run(self) -> None:
         m = mlx_module.Mlx()
@@ -181,7 +181,7 @@ class MazeDisplay:
         m.mlx_loop_hook(mlx_ptr, self._on_loop, None)
         m.mlx_loop(mlx_ptr)
 
-    # ── Input ─────────────────────────────────────────────────────────────────
+    # --- Input ---------------------------------------------------------
 
     def _on_key(self, keycode: int, _param: object) -> None:
         if keycode in (KEY_ESC, KEY_4):
@@ -231,7 +231,7 @@ class MazeDisplay:
             self._draw_hud_text()
         self._dirty = False
 
-    # ── Layout ────────────────────────────────────────────────────────────────
+    # --- Layout ---------------------------------------------------------------
 
     def _fit_to_window(self) -> None:
         usable_h = WIN_H - HUD_H
@@ -247,7 +247,7 @@ class MazeDisplay:
     def _tile_px(self) -> int:
         return max(4, int(TILE_SIZE * self.zoom))
 
-    # ── Cache ─────────────────────────────────────────────────────────────────
+    # --- Cache -------------------------------------------------------------------
 
     def _ensure_cache(self) -> None:
         tile_px = self._tile_px()
@@ -260,7 +260,7 @@ class MazeDisplay:
         self._tile_cache = {hv: _tile_to_bgr(t) for hv, t in scaled.items()}
         self._cached_tile_px = tile_px
 
-    # ── Rendering ─────────────────────────────────────────────────────────────
+    # --- Rendering --------------------------------------------------------------
 
     def _render(self) -> None:
         if self._buf is None:
@@ -390,12 +390,12 @@ class MazeDisplay:
         hud_y  = WIN_H - HUD_H + (HUD_H - 13) // 2
 
         items = [
-            (f"1:regen",               0xC3C8D7),
-            (f"2:path:{path_s}",       0x4BD750 if self.show_path else 0xC3C8D7),
-            (f"3:{theme.name}",        0x64B4FF),
-            (f"4:quit",                0xC85A5A),
-            (f"+/-:{zoom_s}",          0xC3C8D7),
-            (f"arrows:pan",            0xC3C8D7),
+            (f"1:regen ",               0xC3C8D7),
+            (f"2:path:{path_s} ",       0x4BD750 if self.show_path else 0xC3C8D7),
+            (f"3:{theme.name} ",        0x64B4FF),
+            (f"4:quit ",                0xC85A5A),
+            (f"+/-:{zoom_s} ",          0xC3C8D7),
+            (f"arrows:pan ",            0xC3C8D7),
         ]
         x = 12
         for text, color in items:
@@ -405,7 +405,7 @@ class MazeDisplay:
                 break
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# --- CLI -----------------------------------------------------------------------------
 
 def main() -> None:
     import argparse

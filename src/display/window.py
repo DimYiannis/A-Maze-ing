@@ -27,7 +27,7 @@ from .tiles import TILE_SIZE, THEMES, build_tile_cache
 from .overlays import HUD_H, ENTRY_RINGS, EXIT_RINGS
 
 
-# -- Window settings -------------------------------------------------------
+# ── Window settings ───────────────────────────────────────────────────────────
 
 WIN_W:     int   = 1400
 WIN_H:     int   = 900
@@ -36,9 +36,10 @@ ZOOM_STEP: float = 0.1
 ZOOM_MIN:  float = 0.2
 ZOOM_MAX:  float = 4.0
 
-# -- X11 keycodes -------------------------------------------------------
+# ── X11 keycodes ──────────────────────────────────────────────────────────────
 
 KEY_ESC:   int = 65307
+KEY_1:     int = 49     # toggle '42' highlight
 KEY_2:     int = 50     # toggle path
 KEY_3:     int = 51     # cycle colour theme
 KEY_4:     int = 52     # quit
@@ -51,7 +52,7 @@ KEY_LEFT:  int = 65361
 KEY_RIGHT: int = 65363
 
 
-# -- Pixel helpers -------------------------------------------------------
+# ── Pixel helpers ─────────────────────────────────────────────────────────────
 
 def _put(buf: memoryview, x: int, y: int,
          r: int, g: int, b: int, sl: int) -> None:
@@ -154,7 +155,7 @@ class MazeDisplay:
         self._buf:     Optional[memoryview] = None
         self._sl:      int = 0   # size_line
 
-    # -- Public -------------------------------------------------------
+    # ── Public ────────────────────────────────────────────────────────────────
 
     def run(self) -> None:
         m = mlx_module.Mlx()
@@ -180,11 +181,14 @@ class MazeDisplay:
         m.mlx_loop_hook(mlx_ptr, self._on_loop, None)
         m.mlx_loop(mlx_ptr)
 
-    # -- Input -------------------------------------------------------
+    # ── Input ─────────────────────────────────────────────────────────────────
 
     def _on_key(self, keycode: int, _param: object) -> None:
         if keycode in (KEY_ESC, KEY_4):
             os._exit(0)
+        elif keycode == KEY_1:
+            self.show_42 = not self.show_42
+            self._dirty = True
         elif keycode == KEY_2:
             self.show_path = not self.show_path
             self._dirty = True
@@ -227,7 +231,7 @@ class MazeDisplay:
             self._draw_hud_text()
         self._dirty = False
 
-    # -- Layout -------------------------------------------------------
+    # ── Layout ────────────────────────────────────────────────────────────────
 
     def _fit_to_window(self) -> None:
         usable_h = WIN_H - HUD_H
@@ -243,7 +247,7 @@ class MazeDisplay:
     def _tile_px(self) -> int:
         return max(4, int(TILE_SIZE * self.zoom))
 
-    # -- Cache -------------------------------------------------------
+    # ── Cache ─────────────────────────────────────────────────────────────────
 
     def _ensure_cache(self) -> None:
         tile_px = self._tile_px()
@@ -256,7 +260,7 @@ class MazeDisplay:
         self._tile_cache = {hv: _tile_to_bgr(t) for hv, t in scaled.items()}
         self._cached_tile_px = tile_px
 
-    # -- Rendering -------------------------------------------------------
+    # ── Rendering ─────────────────────────────────────────────────────────────
 
     def _render(self) -> None:
         if self._buf is None:
@@ -315,58 +319,40 @@ class MazeDisplay:
         buf[hud_top * sl: hud_top * sl + WIN_W * 4] = div
 
     def _draw_path(self, tile_px: int, sl: int, max_y: int) -> None:
-        buf = self._buf
-        pr, pg, pb, pa = 80, 160, 255, 200
+        """Draw path as rectangles from centre-to-centre between consecutive cells.
+
+        For each pair of adjacent path cells, draw a rectangle spanning
+        from one cell centre to the next, with thickness 2h.
+        Corners are seamless because rectangles share endpoints at centres.
+        """
+        buf  = self._buf
+        pr, pg, pb, pa = 80, 160, 255, 210
         half = tile_px // 2
-        # Strip half-width: enough to look solid but not cover whole cell
-        h = max(3, tile_px // 5)
+        h    = max(3, tile_px // 5)
 
-        for i, (r, c) in enumerate(self.maze.path):
-            px = c * tile_px + self.offset_x
-            py = r * tile_px + self.offset_y
-            cx = px + half
-            cy = py + half
-
-            # Collect directions to neighbours
-            dirs = []
-            if i > 0:
-                pr2, pc2 = self.maze.path[i-1]
-                dr, dc = r-pr2, c-pc2
-                if dr == -1: dirs.append("N")
-                elif dr == 1: dirs.append("S")
-                elif dc == -1: dirs.append("W")
-                elif dc == 1: dirs.append("E")
-            if i < len(self.maze.path) - 1:
-                nr, nc = self.maze.path[i+1]
-                dr2, dc2 = nr-r, nc-c
-                if dr2 == -1: dirs.append("N")
-                elif dr2 == 1: dirs.append("S")
-                elif dc2 == -1: dirs.append("W")
-                elif dc2 == 1: dirs.append("E")
-
-            # Always fill the centre square first — this fills corners automatically
-            for y in range(max(0, cy-h), min(max_y, cy+h)):
-                for x in range(max(0, cx-h), min(WIN_W, cx+h)):
+        def seg(ax, ay, bx, by):
+            """Fill rectangle from (ax,ay) centre to (bx,by) centre with thickness h."""
+            if ax == bx:  # vertical segment
+                y0 = min(ay, by) - h
+                y1 = max(ay, by) + h
+                x0, x1 = ax - h, ax + h
+            else:         # horizontal segment
+                x0 = min(ax, bx) - h
+                x1 = max(ax, bx) + h
+                y0, y1 = ay - h, ay + h
+            for y in range(max(0, y0), min(max_y, y1)):
+                for x in range(max(0, x0), min(WIN_W, x1)):
                     _blend(buf, x, y, pr, pg, pb, pa, sl, max_y)
 
-            # Then extend strips from centre to cell edge in each direction
-            for d in dirs:
-                if d == "N":
-                    for y in range(max(0, py), min(max_y, cy-h)):
-                        for x in range(max(0, cx-h), min(WIN_W, cx+h)):
-                            _blend(buf, x, y, pr, pg, pb, pa, sl, max_y)
-                elif d == "S":
-                    for y in range(max(0, cy+h), min(max_y, py+tile_px)):
-                        for x in range(max(0, cx-h), min(WIN_W, cx+h)):
-                            _blend(buf, x, y, pr, pg, pb, pa, sl, max_y)
-                elif d == "W":
-                    for y in range(max(0, cy-h), min(max_y, cy+h)):
-                        for x in range(max(0, px), min(WIN_W, cx-h)):
-                            _blend(buf, x, y, pr, pg, pb, pa, sl, max_y)
-                elif d == "E":
-                    for y in range(max(0, cy-h), min(max_y, cy+h)):
-                        for x in range(max(0, cx+h), min(WIN_W, px+tile_px)):
-                            _blend(buf, x, y, pr, pg, pb, pa, sl, max_y)
+        path = self.maze.path
+        for i in range(len(path) - 1):
+            r1, c1 = path[i]
+            r2, c2 = path[i+1]
+            ax = c1 * tile_px + self.offset_x + half
+            ay = r1 * tile_px + self.offset_y + half
+            bx = c2 * tile_px + self.offset_x + half
+            by = r2 * tile_px + self.offset_y + half
+            seg(ax, ay, bx, by)
 
     def _draw_portal(self, cx: int, cy: int,
                      rings: list, arrow_up: bool,
@@ -404,11 +390,11 @@ class MazeDisplay:
         hud_y  = WIN_H - HUD_H + (HUD_H - 13) // 2
 
         items = [
-            (f"1:regen ",               0xC3C8D7),
-            (f"2:path:{path_s} ",       0x4BD750 if self.show_path else 0xC3C8D7),
-            (f"3:{theme.name} ",        0x64B4FF),
-            (f"4:quit ",                0xC85A5A),
-            (f"+/-:{zoom_s} ",          0xC3C8D7),
+            (f"1:regen",               0xC3C8D7),
+            (f"2:path:{path_s}",       0x4BD750 if self.show_path else 0xC3C8D7),
+            (f"3:{theme.name}",        0x64B4FF),
+            (f"4:quit",                0xC85A5A),
+            (f"+/-:{zoom_s}",          0xC3C8D7),
             (f"arrows:pan",            0xC3C8D7),
         ]
         x = 12
@@ -419,7 +405,7 @@ class MazeDisplay:
                 break
 
 
-# -- CLI -------------------------------------------------------
+# ── CLI ───────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     import argparse

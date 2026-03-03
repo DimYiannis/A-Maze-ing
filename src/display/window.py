@@ -39,7 +39,7 @@ ZOOM_MAX:  float = 4.0
 
 # X11 keycodes
 KEY_ESC:   int = 65307
-KEY_1:     int = 49     # toggle '42' highlight
+KEY_1:     int = 49     # regen
 KEY_2:     int = 50     # toggle path
 KEY_3:     int = 51     # cycle colour theme
 KEY_4:     int = 52     # quit
@@ -112,7 +112,6 @@ class MazeDisplay:
         self.maze      = parse_maze_file(filepath)
         self.theme_idx = max(0, min(theme_idx, len(THEMES) - 1))
         self.show_path = False
-        self.show_42   = False
         self.zoom      = 1.0
         self.offset_x  = 0
         self.offset_y  = 0
@@ -158,9 +157,8 @@ class MazeDisplay:
     def _on_key(self, keycode: int, _param: object) -> None:
         if keycode in (KEY_ESC, KEY_4):
             os._exit(0)
-        elif keycode == KEY_1:
-            self.show_42 = not self.show_42
-            self._dirty = True
+       # elif keycode == KEY_1:
+           #regen()
         elif keycode == KEY_2:
             self.show_path = not self.show_path
             self._dirty = True
@@ -257,12 +255,12 @@ class MazeDisplay:
                                tile_px, sl, max_y)
 
         # '42' highlight
-        if self.show_42 and self.maze.pattern42_cells:
-            wr, wg, wb = THEMES[self.theme_idx].wall
+        if self.maze.pattern42_cells:
+           # wr, wg, wb = THEMES[self.theme_idx].wall
             for row, col in self.maze.pattern42_cells:
                 x0 = col * tile_px + self.offset_x
                 y0 = row * tile_px + self.offset_y
-                _fill_rect(buf, x0, y0, x0 + tile_px, y0 + tile_px, wr, wg, wb, sl, max_y)
+                _fill_rect(buf, x0, y0, x0 + tile_px, y0 + tile_px, 178, 102, 255, sl, max_y)
         # Path
         if self.show_path and self.maze.path:
             self._draw_path(tile_px, sl, max_y)

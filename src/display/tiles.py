@@ -17,7 +17,7 @@ from typing import NamedTuple
 # sizes
 
 TILE_SIZE: int = 64   # tile width and height in pixels
-WALL:    int = 22   # wall strip thickness in pixels
+WALL:    int = 15   # wall strip thickness in pixels
 
 # colour themes
 

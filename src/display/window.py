@@ -61,20 +61,6 @@ def _fill_rect(buf: memoryview, x0: int, y0: int, x1: int, y1: int,
     for y in range(max(0, y0), min(clip_y1, y1)):
         buf[y * sl + x0 * 4: y * sl + x1 * 4] = row
 
-
-def _blend(buf: memoryview, x: int, y: int,
-           r: int, g: int, b: int, a: int,
-           sl: int, max_y: int) -> None:
-    if not (0 <= x < WIN_W and 0 <= y < max_y) or a == 0:
-        return
-    i = y * sl + x * 4
-    t = a / 255.0
-    buf[i]   = int(b * t + buf[i]   * (1-t))
-    buf[i+1] = int(g * t + buf[i+1] * (1-t))
-    buf[i+2] = int(r * t + buf[i+2] * (1-t))
-    buf[i+3] = 255
-
-
 def _tile_to_bgr(tile: bytearray) -> bytearray:
     out = bytearray(len(tile))
     for i in range(0, len(tile), 4):
@@ -272,13 +258,11 @@ class MazeDisplay:
 
         # '42' highlight
         if self.show_42 and self.maze.pattern42_cells:
-            for r, c in self.maze.pattern42_cells:
-                x0 = c * tile_px + self.offset_x
-                y0 = r * tile_px + self.offset_y
-                for y in range(max(0, y0), min(max_y, y0 + tile_px)):
-                    for x in range(max(0, x0), min(WIN_W, x0 + tile_px)):
-                        _blend(buf, x, y, 255, 200, 0, 80, sl, max_y)
-
+            wr, wg, wb = THEMES[self.theme_idx].wall
+            for row, col in self.maze.pattern42_cells:
+                x0 = col * tile_px + self.offset_x
+                y0 = row * tile_px + self.offset_y
+                _fill_rect(buf, x0, y0, x0 + tile_px, y0 + tile_px, wr, wg, wb, sl, max_y)
         # Path
         if self.show_path and self.maze.path:
             self._draw_path(tile_px, sl, max_y)
@@ -313,20 +297,6 @@ class MazeDisplay:
         half = tile_px // 2
         h    = max(3, tile_px // 5)
 
-        def seg(ax, ay, bx, by):
-            """Fill rectangle from (ax,ay) centre to (bx,by) centre with thickness h."""
-            if ax == bx:  # vertical segment
-                y0 = min(ay, by) - h
-                y1 = max(ay, by) + h
-                x0, x1 = ax - h, ax + h
-            else:         # horizontal segment
-                x0 = min(ax, bx) - h
-                x1 = max(ax, bx) + h
-                y0, y1 = ay - h, ay + h
-            for y in range(max(0, y0), min(max_y, y1)):
-                for x in range(max(0, x0), min(WIN_W, x1)):
-                    _blend(buf, x, y, pr, pg, pb, pa, sl, max_y)
-
         path = self.maze.path
         for i in range(len(path) - 1):
             r1, c1 = path[i]
@@ -335,7 +305,13 @@ class MazeDisplay:
             ay = r1 * tile_px + self.offset_y + half
             bx = c2 * tile_px + self.offset_x + half
             by = r2 * tile_px + self.offset_y + half
-            seg(ax, ay, bx, by)
+            if ax == bx:
+                x0, x1 = ax - h, ax + h
+                y0, y1 = min(ay, by) - h, max(ay, by) + h
+            else:
+                x0, x1 = min(ax, bx) - h, max(ax, bx) + h
+                y0, y1 = ay - h, ay + h
+            _fill_rect(buf, x0, y0, x1, y1, pr, pg, pb, sl, max_y)
 
     def _draw_portal(self, cx: int, cy: int,
                  color: tuple, sl: int, max_y: int) -> None:
@@ -344,7 +320,8 @@ class MazeDisplay:
         for dy2 in range(-14, 15):
             for dx2 in range(-14, 15):
                 if dx2*dx2 + dy2*dy2 <= 14*14:
-                    _blend(buf, cx+dx2, cy+dy2, r, g, b, 255, sl, max_y)
+                    _fill_rect(buf, cx+dx2, cy+dy2, cx+dx2+1, cy+dy2+1,
+                           r, g, b, sl, max_y)
 
     def _draw_hud_text(self) -> None:
         """Draw HUD text directly to window AFTER image blit — so it's on top."""

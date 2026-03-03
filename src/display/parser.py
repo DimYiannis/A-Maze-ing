@@ -9,8 +9,7 @@ import os
 from dataclasses import dataclass, field
 
 
-# -- Data class -------------------------------------------------------
-
+# data class
 @dataclass
 class MazeData:
     """
@@ -51,7 +50,7 @@ class MazeData:
         }
 
 
-# -- helpers -------------------------------------------------------
+# helpers
 
 DIRECTION_OFFSETS: dict[str, tuple[int, int]] = {
     "N": (-1,  0),
@@ -129,8 +128,7 @@ def path_from_directions(
     return path
 
 
-# -- Parsing -------------------------------------------------------
-
+# Parsing
 def parse_maze_file(filepath: str) -> MazeData:
     """
         parse a maze output file and return a MazeData instance.
@@ -157,8 +155,7 @@ def parse_maze_file(filepath: str) -> MazeData:
         )
     grid_part, meta_part = parts
 
-    # -- Grid -------------------------------------------------------
-
+    # Grid
     lines = grid_part.strip().splitlines()
     if not lines:
         raise ValueError("Grid section is empty.")
@@ -179,7 +176,7 @@ def parse_maze_file(filepath: str) -> MazeData:
             row.append(int(ch, 16))
         grid.append(row)
 
-    # -- Metadata -------------------------------------------------------
+    # Metadata
 
     meta = meta_part.strip().splitlines()
     if len(meta) < 3:

@@ -1,16 +1,16 @@
 """
 display/window.py
-=================
-MazeDisplay — main window using mlx_CLXV (CLXV Python wrapper for miniLibX).
 
-Pixel writing:
-    mlx_get_data_addr() returns a memoryview cast to bytes ('B').
-    Each pixel is 4 bytes at offset (y * size_line + x * 4).
-    Byte order: Blue, Green, Red, 0xFF  (alpha must be 255).
+    MazeDisplay — main window using mlx_CLXV.
 
-Key codes (X11):
-    ESC / 4 = quit    2 = path    3 = colour
-    +/-     = zoom    arrows = pan
+    pixel writing:
+        mlx_get_data_addr() returns a memoryview cast to bytes ('B').
+        Each pixel is 4 bytes at offset (y * size_line + x * 4).
+        Byte order: Blue, Green, Red, 0xFF  (alpha must be 255).
+
+    key codes (X11):
+        ESC / 4 = quit    2 = path    3 = colour
+        +/-     = zoom    arrows = pan
 """
 
 import os
@@ -24,11 +24,12 @@ except ModuleNotFoundError:
 
 from .parser import MazeData, parse_maze_file
 from .tiles import TILE_SIZE, THEMES, build_tile_cache
-from .overlays import HUD_H, ENTRY_RINGS, EXIT_RINGS
 
+HUD_H: int = 46
+ENTRY_COLOR = (0,  200, 80)   # green
+EXIT_COLOR  = (255, 80, 20)   # orange
 
-# --- Window settings -------------------------------------------------------
-
+# window settings
 WIN_W:     int   = 1400
 WIN_H:     int   = 900
 PAN_STEP:  int   = 40
@@ -36,8 +37,7 @@ ZOOM_STEP: float = 0.1
 ZOOM_MIN:  float = 0.2
 ZOOM_MAX:  float = 4.0
 
-# --- X11 keycodes -------------------------------------------------------
-
+# X11 keycodes
 KEY_ESC:   int = 65307
 KEY_1:     int = 49     # toggle '42' highlight
 KEY_2:     int = 50     # toggle path
@@ -52,19 +52,7 @@ KEY_LEFT:  int = 65361
 KEY_RIGHT: int = 65363
 
 
-# --- Pixel helpers -------------------------------------------------------
-
-def _put(buf: memoryview, x: int, y: int,
-         r: int, g: int, b: int, sl: int) -> None:
-    i = y * sl + x * 4
-    buf[i] = b; buf[i+1] = g; buf[i+2] = r; buf[i+3] = 255
-
-
-def _fill_row(buf: memoryview, y: int, x0: int, x1: int,
-              r: int, g: int, b: int, sl: int) -> None:
-    row = bytes([b, g, r, 255] * (x1 - x0))
-    buf[y * sl + x0 * 4: y * sl + x1 * 4] = row
-
+# Pixel helpers
 
 def _fill_rect(buf: memoryview, x0: int, y0: int, x1: int, y1: int,
                r: int, g: int, b: int, sl: int,
@@ -126,7 +114,6 @@ def _scale_tile(src: bytearray, target_px: int) -> bytearray:
     return dst
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 
 class MazeDisplay:
     """
@@ -155,7 +142,7 @@ class MazeDisplay:
         self._buf:     Optional[memoryview] = None
         self._sl:      int = 0   # size_line
 
-    # --- Public -------------------------------------------------------
+    # public
 
     def run(self) -> None:
         m = mlx_module.Mlx()
@@ -181,8 +168,7 @@ class MazeDisplay:
         m.mlx_loop_hook(mlx_ptr, self._on_loop, None)
         m.mlx_loop(mlx_ptr)
 
-    # --- Input ---------------------------------------------------------
-
+    # input
     def _on_key(self, keycode: int, _param: object) -> None:
         if keycode in (KEY_ESC, KEY_4):
             os._exit(0)
@@ -231,8 +217,7 @@ class MazeDisplay:
             self._draw_hud_text()
         self._dirty = False
 
-    # --- Layout ---------------------------------------------------------------
-
+    # layout
     def _fit_to_window(self) -> None:
         usable_h = WIN_H - HUD_H
         zoom_x = WIN_W / (self.maze.cols * TILE_SIZE)
@@ -247,8 +232,7 @@ class MazeDisplay:
     def _tile_px(self) -> int:
         return max(4, int(TILE_SIZE * self.zoom))
 
-    # --- Cache -------------------------------------------------------------------
-
+    # cache
     def _ensure_cache(self) -> None:
         tile_px = self._tile_px()
         if self._tile_cache and self._cached_tile_px == tile_px:
@@ -260,8 +244,7 @@ class MazeDisplay:
         self._tile_cache = {hv: _tile_to_bgr(t) for hv, t in scaled.items()}
         self._cached_tile_px = tile_px
 
-    # --- Rendering --------------------------------------------------------------
-
+    # rendering
     def _render(self) -> None:
         if self._buf is None:
             return
@@ -306,10 +289,10 @@ class MazeDisplay:
         xr, xc = self.maze.exit_
         self._draw_portal(ec*tile_px+self.offset_x+half,
                           er*tile_px+self.offset_y+half,
-                          ENTRY_RINGS, False, sl, max_y)
+                          ENTRY_COLOR, sl, max_y)
         self._draw_portal(xc*tile_px+self.offset_x+half,
                           xr*tile_px+self.offset_y+half,
-                          EXIT_RINGS, True, sl, max_y)
+                          EXIT_COLOR, sl, max_y)
 
         # HUD background drawn into image
         hud_top = WIN_H - HUD_H
@@ -355,29 +338,13 @@ class MazeDisplay:
             seg(ax, ay, bx, by)
 
     def _draw_portal(self, cx: int, cy: int,
-                     rings: list, arrow_up: bool,
-                     sl: int, max_y: int) -> None:
+                 color: tuple, sl: int, max_y: int) -> None:
         buf = self._buf
-        for radius, col in zip([14,10,7,4,2], rings):
-            for dy2 in range(-radius, radius+1):
-                for dx2 in range(-radius, radius+1):
-                    if dx2*dx2 + dy2*dy2 <= radius*radius:
-                        _blend(buf, cx+dx2, cy+dy2, *col, 220, sl, max_y)
-        ar, ag, ab = (220, 255, 225) if not arrow_up else (255, 235, 190)
-        if arrow_up:
-            for dy2 in range(-3, 7):
-                _blend(buf, cx-1, cy+dy2, ar, ag, ab, 255, sl, max_y)
-                _blend(buf, cx,   cy+dy2, ar, ag, ab, 255, sl, max_y)
-            for s in range(6):
-                for dx2 in range(-5+s, 6-s):
-                    _blend(buf, cx+dx2, cy-3-s, ar, ag, ab, 255, sl, max_y)
-        else:
-            for dy2 in range(-6, 4):
-                _blend(buf, cx-1, cy+dy2, ar, ag, ab, 255, sl, max_y)
-                _blend(buf, cx,   cy+dy2, ar, ag, ab, 255, sl, max_y)
-            for s in range(6):
-                for dx2 in range(-5+s, 6-s):
-                    _blend(buf, cx+dx2, cy+3+s, ar, ag, ab, 255, sl, max_y)
+        r, g, b = color
+        for dy2 in range(-14, 15):
+            for dx2 in range(-14, 15):
+                if dx2*dx2 + dy2*dy2 <= 14*14:
+                    _blend(buf, cx+dx2, cy+dy2, r, g, b, 255, sl, max_y)
 
     def _draw_hud_text(self) -> None:
         """Draw HUD text directly to window AFTER image blit — so it's on top."""
@@ -405,8 +372,7 @@ class MazeDisplay:
                 break
 
 
-# --- CLI -----------------------------------------------------------------------------
-
+# CLI
 def main() -> None:
     import argparse
     p = argparse.ArgumentParser(description="A-Maze-ing display")

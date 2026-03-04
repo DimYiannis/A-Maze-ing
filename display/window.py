@@ -284,11 +284,12 @@ class MazeDisplay:
         buf[hud_top * sl: hud_top * sl + WIN_W * 4] = div
 
     def _draw_path(self, tile_px: int, sl: int, max_y: int) -> None:
-        """Draw path as rectangles from centre-to-centre between consecutive cells.
+        """
+            draw path as rectangles from centre-to-centre between consecutive cells.
 
-        For each pair of adjacent path cells, draw a rectangle spanning
-        from one cell centre to the next, with thickness 2h.
-        Corners are seamless because rectangles share endpoints at centres.
+            for each pair of adjacent path cells, draw a rectangle spanning
+            from one cell centre to the next, with thickness 2h.
+            corners are seamless because rectangles share endpoints at centres.
         """
         buf  = self._buf
         pr, pg, pb, pa = 80, 160, 255, 210
@@ -322,7 +323,7 @@ class MazeDisplay:
                            r, g, b, sl, max_y)
 
     def _draw_hud_text(self) -> None:
-        """Draw HUD text directly to window AFTER image blit — so it's on top."""
+        """draw HUD text directly to window AFTER image blit — so it's on top."""
         m = self._m
         if not (m and self._mlx_ptr and self._win_ptr):
             return
@@ -364,6 +365,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    import pathlib
-    sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
     main()

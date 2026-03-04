@@ -24,11 +24,11 @@ WALL:    int = 15   # wall strip thickness in pixels
 class Theme(NamedTuple):
     """A wall colour theme.
 
-    Attributes:
-        name:     Display name for the HUD.
-        floor:    RGB of the passage floor.
-        wall:     RGB of the wall face.
-        wall_hi:  RGB of the inner edge highlight line.
+        attributes:
+            name:     display name for the HUD.
+            floor:    RGB of the passage floor.
+            wall:     RGB of the wall face.
+            wall_hi:  RGB of the inner edge highlight line.
     """
     name:    str
     floor:   tuple[int, int, int]
@@ -76,15 +76,14 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
     """
         render a single maze tile as a flat RGBA bytearray.
 
-        each wall is drawn as a solid strip with a 2px bright line
-        on its inner edge for a subtle sense of depth.
+        each wall is drawn as a solid strip with a small bright line
 
         args:
-            hv:    Hex value (0–15) encoding which walls are closed.
-            theme: Active colour theme.
+            hv:    hex value (0–15) showing which walls are closed.
+            theme: color theme.
 
         returns:
-            bytearray of length TILE_SIZE × TILE_SIZE × 4 (RGBA, row-major).
+            bytearray of length TILE_SIZE × TILE_SIZE × 4.
     """
     T  = TILE_SIZE
     wt = WALL
@@ -120,6 +119,9 @@ def build_tile_cache(theme: Theme) -> dict[int, bytearray]:
         build all 16 tiles for the given theme.
         save time to make them once and save them
         than building them over and over again
+
+        args:
+            class of the theme color for maze
 
         returns:
             dict with all the tile.

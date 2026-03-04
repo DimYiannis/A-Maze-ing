@@ -212,8 +212,8 @@ def write_output(
                 content.write(f"{maze[i][j]:x}")
             content.write("\n")
         content.write("\n")
-        content.write(f"{entry_y},{entry_x}\n")
-        content.write(f"{exit_y},{exit_x}\n")
+        content.write(f"{entry_x},{entry_y}\n")
+        content.write(f"{exit_x},{exit_y}\n")
         content.write(f"{path}\n")
 
 
@@ -230,13 +230,11 @@ def main() -> None:
     place_42_pattern(maze, visited)
     generate(maze, 0, 0, visited)
     print("Maze generated!")
-    path = solve_maze(maze, enter_maze[0], enter_maze[1], exit_maze[0], exit_maze[1])
+    path = solve_maze(maze, enter_maze[1], enter_maze[0], exit_maze[1], exit_maze[0])
     write_output(
         maze,
-        enter_maze[0],
-        enter_maze[1],
-        exit_maze[0],
-        exit_maze[1],
+        enter_maze[1], enter_maze[0],
+        exit_maze[1],  exit_maze[0],
         path,
         config["OUTPUT_FILE"],
     )

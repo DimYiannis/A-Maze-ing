@@ -225,7 +225,7 @@ def main() -> None:
     config = parse_config(filename)
     enter_maze = config["ENTRY"]
     exit_maze = config["EXIT"]
-    maze = create_grid(config["HEIGHT"], config["WIDTH"])
+    maze = create_grid(config["WIDTH"], config["HEIGHT"])
     visited = [[False for _ in range(config["WIDTH"])] for _ in range(config["HEIGHT"])]
     place_42_pattern(maze, visited)
     generate(maze, 0, 0, visited)

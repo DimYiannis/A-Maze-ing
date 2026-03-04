@@ -289,7 +289,7 @@ class MazeDisplay:
 
     # cache
     def ensure_cache(self) -> None:
-         """
+        """
             Build or rebuild the tile cache for the current zoom and theme.
 
             skips rebuilding if the cache is already valid for the current
@@ -469,16 +469,13 @@ class MazeDisplay:
 
 
 # CLI
-def main() -> None:
-    import argparse
-    p = argparse.ArgumentParser(description="A-Maze-ing display")
-    p.add_argument("maze_file")
-    p.add_argument("--theme", type=int, default=0,
-                   choices=range(len(THEMES)),
-                   metavar=f"0-{len(THEMES)-1}")
-    args = p.parse_args()
+def main(maze_file: str = None) -> None:
+    if maze_file is None:
+        if len(sys.argv) < 2:
+            printf("usage: python3 a_maze_ing.py config.txt")
+            sys.exit(1)
     try:
-        MazeDisplay(args.maze_file, theme_idx=args.theme).run()
+        MazeDisplay(maze_file).run()
     except (FileNotFoundError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)

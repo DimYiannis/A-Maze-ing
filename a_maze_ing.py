@@ -1,9 +1,7 @@
 
-from src.game import Game
+from display.window import main
 
-def main():
-    game = Game("maze.txt")
-    game.run()
+
 
 if __name__ == "__main__":
     main()

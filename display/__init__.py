@@ -1,12 +1,10 @@
 """
-display
-=======
-Graphical maze display for A-Maze-ing.
+    graphical maze display for A-Maze-ing.
 
-Usage::
+    usage::
 
-    from display import MazeDisplay
-    MazeDisplay("maze.txt").run()
+        from display import MazeDisplay
+        MazeDisplay("maze.txt").run()
 """
 
 from .window import MazeDisplay

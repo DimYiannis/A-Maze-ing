@@ -14,7 +14,6 @@ display/window.py
 """
 
 import os
-import sys
 from typing import Optional
 
 try:
@@ -170,8 +169,9 @@ class MazeDisplay:
         controls:  2=path  3=colour  4/ESC=quit  +/-=zoom  arrows=pan
     """
 
-    def __init__(self, filepath: str, theme_idx: int = 0) -> None:
+    def __init__(self, filepath: str, theme_idx: int = 0, on_regen=None) -> None:
         self.filepath  = filepath
+        self.on_regen = on_regen
         self.maze      = parse_maze_file(filepath)
         self.theme_idx = max(0, min(theme_idx, len(THEMES) - 1))
         self.show_path = False
@@ -228,8 +228,12 @@ class MazeDisplay:
     def on_key(self, keycode: int, _param: object) -> None:
         if keycode in (KEY_ESC, KEY_4):
             os._exit(0)
-       # elif keycode == KEY_1:
-           #regen()
+        elif keycode == KEY_1:
+            if self.on_regen:
+                self.on_regen()
+                self.maze = parse_maze_file(self.filepath)
+                self.fit_to_window()
+            self._dirty = True
         elif keycode == KEY_2:
             self.show_path = not self.show_path
             self._dirty = True
@@ -467,19 +471,3 @@ class MazeDisplay:
             if x > WIN_W - 80:
                 break
 
-
-# CLI
-def main(maze_file: str = None) -> None:
-    if maze_file is None:
-        if len(sys.argv) < 2:
-            printf("usage: python3 a_maze_ing.py config.txt")
-            sys.exit(1)
-    try:
-        MazeDisplay(maze_file).run()
-    except (FileNotFoundError, ValueError) as exc:
-        print(f"Error: {exc}", file=sys.stderr)
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

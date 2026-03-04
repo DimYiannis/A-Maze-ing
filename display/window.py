@@ -260,7 +260,7 @@ class MazeDisplay:
             for row, col in self.maze.pattern42_cells:
                 x0 = col * tile_px + self.offset_x
                 y0 = row * tile_px + self.offset_y
-                _fill_rect(buf, x0, y0, x0 + tile_px, y0 + tile_px, 178, 102, 255, sl, max_y)
+                _fill_rect(buf, x0, y0, x0 + tile_px, y0 + tile_px, 204, 204, 255, sl, max_y)
         # Path
         if self.show_path and self.maze.path:
             self._draw_path(tile_px, sl, max_y)

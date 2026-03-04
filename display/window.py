@@ -78,6 +78,39 @@ def fill_rect(buf: memoryview, x0: int, y0: int, x1: int, y1: int,
     for y in range(max(0, y0), min(clip_y1, y1)):
         buf[y * sl + x0 * 4: y * sl + x1 * 4] = row
 
+
+def blend_rect(buf: memoryview, x0: int, y0: int, x1: int, y1: int,
+                r: int, g: int, b: int, a: int,
+                sl: int, max_y: int) -> None:
+    """Blend a filled rectangle over the existing buffer contents.
+
+    Unlike _fill_rect which overwrites pixels completely, this mixes
+    the new colour with whatever is already in the buffer using the
+    alpha value as a blend factor.
+
+    Args:
+        buf:    MLX image buffer (BGRX, row-major).
+        x0:     Left column (inclusive).
+        y0:     Top row (inclusive).
+        x1:     Right column (exclusive).
+        y1:     Bottom row (exclusive).
+        r:      Red (0-255).
+        g:      Green (0-255).
+        b:      Blue (0-255).
+        a:      Opacity (0=fully transparent, 255=fully opaque).
+        sl:     Size line — row stride in bytes from mlx_get_data_addr().
+        max_y:  Bottom clipping boundary (top of HUD bar).
+    """
+    t = a / 255.0
+    for y in range(max(0, y0), min(max_y, y1)):
+        for x in range(max(0, x0), min(WIN_W, x1)):
+            i = y * sl + x * 4
+            buf[i]   = int(b * t + buf[i]   * (1-t))
+            buf[i+1] = int(g * t + buf[i+1] * (1-t))
+            buf[i+2] = int(r * t + buf[i+2] * (1-t))
+            buf[i+3] = 255
+
+
 def tile_to_bgr(tile: bytearray) -> bytearray:
     """
         Convert a tile from RGBA to BGRX byte order for MLX.
@@ -357,7 +390,7 @@ class MazeDisplay:
             for row, col in self.maze.pattern42_cells:
                 x0 = col * tile_px + self.offset_x
                 y0 = row * tile_px + self.offset_y
-                fill_rect(buf, x0, y0, x0 + tile_px, y0 + tile_px, 204, 204, 255, sl, max_y)
+                blend_rect(buf, x0, y0, x0 + tile_px, y0 + tile_px, 204, 204, 255, 120, sl, max_y)
         # path
         if self.show_path and self.maze.path:
             self.draw_path(tile_px, sl, max_y)

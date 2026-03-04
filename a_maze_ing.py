@@ -9,5 +9,6 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt")
         sys.exit(1)
-    generate()        # reads sys.argv[1] itself
-    MazeDisplay("maze.txt", on_regen=regenerate).run()
+    generate()
+    display = MazeDisplay("maze.txt", on_regen=regenerate)
+    display.run()

@@ -1,5 +1,6 @@
 import random
 from collections import deque
+import sys
 
 NORTH = 1
 EAST = 2
@@ -7,12 +8,26 @@ SOUTH = 4
 WEST = 8
 
 
+def parse_config(filename: str) -> dict:
+    parse = {}
+    with open(filename, "r") as file:
+        for line in file:
+            if line.startswith("#"):
+                continue
+            line = line.strip()
+            if line == "":
+                continue
+            key, value = line.split("=")
+            if key == "WIDTH" or key == "HEIGHT":
+                value = int(value)
+            elif key == "ENTRY" or key == "EXIT":
+                digit1, digit2 = value.split(",")
+                value = (int(digit1), int(digit2))
+            elif key == "PERFECT":
+                value = value == "True"
+            parse[key] = value
 
-
-
-def parse_config():
-
-
+    return parse
 
 
 def has_wall(cell: int, direction: int) -> bool:
@@ -179,14 +194,52 @@ def solve_maze(
     return ""
 
 
+def write_output(
+    maze: list[list[int]],
+    entry_y: int,
+    entry_x: int,
+    exit_y: int,
+    exit_x: int,
+    path: str,
+    filename: str,
+) -> None:
+    height = len(maze)
+    width = len(maze[0])
+
+    with open(filename, "w") as content:
+        for i in range(height):
+            for j in range(width):
+                content.write(f"{maze[i][j]:x}")
+            content.write("\n")
+        content.write("\n")
+        content.write(f"{entry_y},{entry_x}\n")
+        content.write(f"{exit_y},{exit_x}\n")
+        content.write(f"{path}\n")
+
+
 def main() -> None:
-    maze = create_grid(10, 10)
-    visited = [[False for _ in range(10)] for _ in range(10)]
+    if len(sys.argv) != 2:
+        print("Usage: python3 a_mazing.py config.txt")
+        return
+    filename = sys.argv[1]
+    config = parse_config(filename)
+    enter_maze = config["ENTRY"]
+    exit_maze = config["EXIT"]
+    maze = create_grid(config["HEIGHT"], config["WIDTH"])
+    visited = [[False for _ in range(config["WIDTH"])] for _ in range(config["HEIGHT"])]
     place_42_pattern(maze, visited)
     generate(maze, 0, 0, visited)
     print("Maze generated!")
-    path = solve_maze(maze, 0, 0, 9, 9)
-    print(f"{path}")
+    path = solve_maze(maze, enter_maze[0], enter_maze[1], exit_maze[0], exit_maze[1])
+    write_output(
+        maze,
+        enter_maze[0],
+        enter_maze[1],
+        exit_maze[0],
+        exit_maze[1],
+        path,
+        config["OUTPUT_FILE"],
+    )
 
 
 if __name__ == "__main__":

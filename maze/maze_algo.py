@@ -193,26 +193,12 @@ class MazeGenerator:
         with open(filename, "w") as content:
             for row in range(self.height):
                 for col in range(self.width):
-                    content.write(f"{self.maze[row][col]:x}")
+                    content.write(f"{self.maze[row][col]:X}")
                 content.write("\n")
             content.write("\n")
             content.write(f"{entry_x},{entry_y}\n")
             content.write(f"{exit_x},{exit_y}\n")
             content.write(f"{path}\n")
-
-
-def add_wall(
-        maze:
-        list[list[int]], yindex: int, xindex: int, direction: int) -> None:
-    maze[yindex][xindex] |= direction
-    if direction == NORTH and yindex > 0:
-        maze[yindex - 1][xindex] |= SOUTH
-    if direction == EAST and xindex < len(maze[yindex]) - 1:
-        maze[yindex][xindex + 1] |= WEST
-    if direction == SOUTH and yindex < len(maze) - 1:
-        maze[yindex + 1][xindex] |= NORTH
-    if direction == WEST and xindex > 0:
-        maze[yindex][xindex - 1] |= EAST
 
 
 def main(seed: int = None) -> None:

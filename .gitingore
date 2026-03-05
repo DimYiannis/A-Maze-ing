@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Mypy
+.mypy_cache/
+
+# Pytest
+.pytest_cache/
+
+# Maze output
+maze.txt

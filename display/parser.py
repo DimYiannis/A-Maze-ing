@@ -1,7 +1,7 @@
 """
-    display/parser.py
+display/parser.py
 
-    Parses the maze output .txt file into a MazeData dataclass.
+Parses the maze output .txt file into a MazeData dataclass.
 
 """
 
@@ -26,20 +26,20 @@ class MazeData:
         pattern42_cells: fully-walled (0xF) cells for the '42' pattern.
     """
 
-    grid:            list[list[int]]
-    rows:            int
-    cols:            int
-    entry:           tuple[int, int]
-    exit_:           tuple[int, int]
-    path:            list[tuple[int, int]]
-    path_cells:      set[tuple[int, int]] = field(default_factory=set)
+    grid: list[list[int]]
+    rows: int
+    cols: int
+    entry: tuple[int, int]
+    exit_: tuple[int, int]
+    path: list[tuple[int, int]]
+    path_cells: set[tuple[int, int]] = field(default_factory=set)
     pattern42_cells: set[tuple[int, int]] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         """it precomputes:
-            path_cells → fast lookup for path positions
-            pattern42_cells → fast lookup for cells with value 15
-            so that later rendering becomes faster.
+        path_cells → fast lookup for path positions
+        pattern42_cells → fast lookup for cells with value 15
+        so that later rendering becomes faster.
         """
         self.path_cells = set(self.path)
         self.pattern42_cells = {
@@ -53,10 +53,10 @@ class MazeData:
 # helpers
 
 DIRECTION_OFFSETS: dict[str, tuple[int, int]] = {
-    "N": (-1,  0),
-    "S": ( 1,  0),
-    "E": ( 0,  1),
-    "W": ( 0, -1),
+    "N": (-1, 0),
+    "S": (1, 0),
+    "E": (0, 1),
+    "W": (0, -1),
 }
 
 
@@ -89,8 +89,7 @@ def parse_coord(
         raise ValueError(f"{label}: non-integer values in {raw!r}")
     if not (0 <= row < rows and 0 <= col < cols):
         raise ValueError(
-            f"{label} ({col},{row}) out of bounds "
-            f"for {cols}×{rows} grid"
+            f"{label} ({col},{row}) out of bounds " f"for {cols}×{rows} grid"
         )
     return (row, col)
 
@@ -121,9 +120,7 @@ def path_from_directions(
         dr, dc = DIRECTION_OFFSETS[ch]
         r, c = r + dr, c + dc
         if not (0 <= r < rows and 0 <= c < cols):
-            raise ValueError(
-                f"Direction {ch!r} at step {i} leaves the grid"
-            )
+            raise ValueError(f"Direction {ch!r} at step {i} leaves the grid")
         path.append((r, c))
     return path
 
@@ -131,13 +128,13 @@ def path_from_directions(
 # Parsing
 def parse_maze_file(filepath: str) -> MazeData:
     """
-        parse a maze output file and return a MazeData instance.
+    parse a maze output file and return a MazeData instance.
 
-        args:
-            filepath: Path to the .txt maze output file.
+    args:
+        filepath: Path to the .txt maze output file.
 
-        returns:
-            populated MazeData instance.
+    returns:
+        populated MazeData instance.
     """
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"Maze file not found: '{filepath}'")
@@ -151,8 +148,7 @@ def parse_maze_file(filepath: str) -> MazeData:
     parts = content.strip().split("\n\n")
     if len(parts) != 2:
         raise ValueError(
-            f"Expected one blank-line separator, found {len(parts) - 1}"
-        )
+            f"Expected one blank-line separator, found {len(parts) - 1}")
     grid_part, meta_part = parts
 
     # Grid
@@ -165,14 +161,11 @@ def parse_maze_file(filepath: str) -> MazeData:
     for lineno, line in enumerate(lines, start=1):
         if len(line) != cols:
             raise ValueError(
-                f"Row {lineno}: expected {cols} cells, got {len(line)}"
-            )
+                f"Row {lineno}: expected {cols} cells, got {len(line)}")
         row: list[int] = []
         for ch in line.upper():
             if ch not in "0123456789ABCDEF":
-                raise ValueError(
-                    f"Row {lineno}: invalid hex character {ch!r}"
-                )
+                raise ValueError(f"Row {lineno}: invalid hex character {ch!r}")
             row.append(int(ch, 16))
         grid.append(row)
 
@@ -185,7 +178,7 @@ def parse_maze_file(filepath: str) -> MazeData:
         )
 
     entry = parse_coord(meta[0], "ENTRY", rows, cols)
-    exit_ = parse_coord(meta[1], "EXIT",  rows, cols)
+    exit_ = parse_coord(meta[1], "EXIT", rows, cols)
 
     try:
         path = path_from_directions(entry, meta[2].strip(), rows, cols)
@@ -193,6 +186,10 @@ def parse_maze_file(filepath: str) -> MazeData:
         raise ValueError(f"Invalid path: {exc}") from exc
 
     return MazeData(
-        grid=grid, rows=rows, cols=cols,
-        entry=entry, exit_=exit_, path=path,
+        grid=grid,
+        rows=rows,
+        cols=cols,
+        entry=entry,
+        exit_=exit_,
+        path=path,
     )

@@ -38,12 +38,15 @@ def has_wall(cell: int, direction: int) -> bool:
         direction (int): Bitmask value of the direction to check.
 
     Returns:
-        bool: True if the wall in the given direction is present, False otherwise.
+        bool: True if the wall in the given direction is present,
+        False otherwise.
     """
     return bool(cell & direction)
 
 
-def add_wall(maze: list[list[int]], yindex: int, xindex: int, direction: int) -> None:
+def add_wall(
+        maze:
+        list[list[int]], yindex: int, xindex: int, direction: int) -> None:
     maze[yindex][xindex] |= direction
     if direction == NORTH and yindex > 0:
         maze[yindex - 1][xindex] |= SOUTH
@@ -134,7 +137,8 @@ def generate(
             generate(maze, neighbour_y, neighbour_x, visited)
 
 
-def reconstruct_path(traveled_to: list[list[int]], exit_y: int, exit_x: int) -> str:
+def reconstruct_path(
+        traveled_to: list[list[int]], exit_y: int, exit_x: int) -> str:
 
     path = ""
     y, x = exit_y, exit_x
@@ -190,7 +194,8 @@ def solve_maze(
                 and not has_wall(maze[y][x], direction)
             ):
                 queue.append((neighbour_y, neighbour_x))
-                traveled_to[neighbour_y][neighbour_x] = direction_list[direction]
+                direction_letter = direction_list[direction]
+                traveled_to[neighbour_y][neighbour_x] = direction_letter
     return ""
 
 
@@ -226,15 +231,20 @@ def main() -> None:
     enter_maze = config["ENTRY"]
     exit_maze = config["EXIT"]
     maze = create_grid(config["WIDTH"], config["HEIGHT"])
-    visited = [[False for _ in range(config["WIDTH"])] for _ in range(config["HEIGHT"])]
+    visited = [[
+        False for _ in range(config["WIDTH"])]
+            for _ in range(config["HEIGHT"])]
     place_42_pattern(maze, visited)
     generate(maze, 0, 0, visited)
     print("Maze generated!")
-    path = solve_maze(maze, enter_maze[1], enter_maze[0], exit_maze[1], exit_maze[0])
+    path = solve_maze(
+        maze, enter_maze[1], enter_maze[0], exit_maze[1], exit_maze[0])
     write_output(
         maze,
-        enter_maze[1], enter_maze[0],
-        exit_maze[1],  exit_maze[0],
+        enter_maze[1],
+        enter_maze[0],
+        exit_maze[1],
+        exit_maze[0],
         path,
         config["OUTPUT_FILE"],
     )

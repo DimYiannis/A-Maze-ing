@@ -1,9 +1,9 @@
-MAZE = maze.txt
+CONFIG = config.txt
 AMAZING = a_maze_ing.py
 PYTHON = python3
 
 display:
-	$(PYTHON) $(AMAZING) $(MAZE)
+	$(PYTHON) $(AMAZING) $(CONFIG)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

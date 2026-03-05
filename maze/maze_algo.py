@@ -28,6 +28,18 @@ def parse_config(filename: str) -> dict:
             parse[key] = value
     return parse
 
+def validate_config(config: dict) -> None:
+    w, h = config["WIDTH"], config["HEIGHT"]
+    ex, ey = config["ENTRY"]
+    xx, xy = config["EXIT"]
+    if not (0 <= ey < h and 0 <= ex < w):
+        raise ValueError(f"ENTRY ({ex},{ey}) out of bounds for {w}×{h} grid")
+    if not (0 <= xy < h and 0 <= xx < w):
+        raise ValueError(f"EXIT ({xx},{xy}) out of bounds for {w}×{h} grid")
+    if config["ENTRY"] == config["EXIT"]:
+        raise ValueError("ENTRY and EXIT must be different")
+
+
 class MazeGenerator:
     def __init__(self, width: int, height: int, seed: int = None):
         self.width = width
@@ -52,7 +64,6 @@ class MazeGenerator:
         """
         return self._solve_maze(entry[1], entry[0], exit_[1], exit_[0])
 
-
     def write(self, entry:tuple, exit_: tuple, path: str, filename: str) -> None:
         """
             write the maze to a file
@@ -66,16 +77,24 @@ class MazeGenerator:
 
 
     def _place_42_pattern(self) -> bool:
-        if self.height < 5 or self.width < 9:
+        if self.height < 7 or self.width < 11:
             print("Maze is too small to display 42")
             return False
+
+        # centre the pattern
+        start_row = (self.height - 7) // 2
+        start_col = (self.width  - 9) // 2
         pattern = [
-            (2,2),(3,2),(4,2),(4,3),(3,4),(4,4),(5,4),(6,4),
-            (2,6),(2,7),(2,8),(3,8),(4,6),(4,7),(4,8),(5,6),(6,6),(6,7),(6,8),
+            (0,0),(1,0),(2,0),(2,1),(1,2),(2,2),(3,2),(4,2),  # "4"
+            (0,4),(0,5),(0,6),(1,6),(2,4),(2,5),(2,6),(3,4),(4,4),(4,5),(4,6),  # "2"
         ]
+
         for row, col in pattern:
-            self.maze[row][col] = 15
-            self.visited[row][col] = True
+            r = start_row + row
+            c = start_col + col
+            if 0 <= r < self.height and 0 <= c < self.width:
+                self.maze[r][c] = 15
+                self.visited[r][c] = True
         return True
 
     def _remove_wall(self, yindex: int, xindex: int, direction: int) -> None:
@@ -89,10 +108,10 @@ class MazeGenerator:
         if direction == WEST and xindex > 0:
             self.maze[yindex][xindex - 1] &= ~EAST
 
-    def _generate(self, start_y: int, start_x: int) -> None:
+    def _generate(self, start_y: int, start_x: int) -> None: 
         direction_list = [NORTH, EAST, SOUTH, WEST]
         random.shuffle(direction_list)
-        self.visited[start_y][start_x] = True
+        self.visited[start_y][start_x] = True 
         for direction in direction_list:
             if direction == NORTH:
                 neighbour_y, neighbour_x = start_y - 1, start_x
@@ -103,7 +122,7 @@ class MazeGenerator:
             elif direction == WEST:
                 neighbour_y, neighbour_x = start_y, start_x - 1
             if (
-                0 <= neighbour_y <self. height
+                0 <= neighbour_y <self.height
                 and 0 <= neighbour_x < self.width
                 and not self.visited[neighbour_y][neighbour_x]
             ):
@@ -207,11 +226,13 @@ def main(seed: int = None) -> None:
         return
     filename = sys.argv[1]
     config = parse_config(filename)
+    validate_config(config)
     enter_maze = config["ENTRY"]
     exit_maze = config["EXIT"]
     if seed is None:
         seed = config.get("SEED", random.randint(0, 999999))
     print(f"Seed: {seed}")
+    sys.setrecursionlimit(config["WIDTH"] * config["HEIGHT"] * 2)
     mg = MazeGenerator(config["WIDTH"], config["HEIGHT"], seed)
     mg.generate(perfect=config["PERFECT"]) 
     path = mg.solve(enter_maze, exit_maze)

@@ -1,10 +1,11 @@
 import sys
+import random
 from maze.maze_algo import main as generate
 from display.window import MazeDisplay
 
 
 def regenerate():
-    generate()
+    generate(seed=random.randint(0, 999999))
 
 
 if __name__ == "__main__":

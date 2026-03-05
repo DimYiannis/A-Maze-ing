@@ -18,7 +18,7 @@ def parse_config(filename: str) -> dict:
             if line == "":
                 continue
             key, value = line.split("=")
-            if key == "WIDTH" or key == "HEIGHT":
+            if key == "WIDTH" or key == "HEIGHT" or key == "SEED":
                 value = int(value)
             elif key == "ENTRY" or key == "EXIT":
                 digit1, digit2 = value.split(",")
@@ -26,7 +26,6 @@ def parse_config(filename: str) -> dict:
             elif key == "PERFECT":
                 value = value == "True"
             parse[key] = value
-
     return parse
 
 
@@ -222,7 +221,7 @@ def write_output(
         content.write(f"{path}\n")
 
 
-def main() -> None:
+def main(seed: int = None) -> None:
     if len(sys.argv) != 2:
         print("Usage: python3 a_mazing.py config.txt")
         return
@@ -234,6 +233,10 @@ def main() -> None:
     visited = [[
         False for _ in range(config["WIDTH"])]
             for _ in range(config["HEIGHT"])]
+    if seed is None:
+        seed = config.get("SEED", random.randint(0, 999999))
+    random.seed(seed)
+    print(f"Seed: {seed}")
     place_42_pattern(maze, visited)
     generate(maze, 0, 0, visited)
     print("Maze generated!")

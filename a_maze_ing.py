@@ -2,8 +2,10 @@ import sys
 from maze.maze_algo import main as generate
 from display.window import MazeDisplay
 
+
 def regenerate():
     generate()
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -128,7 +128,7 @@ def blend_rect(
             buf[i] = int(b * t + buf[i] * (1 - t))
             buf[i + 1] = int(g * t + buf[i + 1] * (1 - t))
             buf[i + 2] = int(r * t + buf[i + 2] * (1 - t))
-            buf[i + 3] = 255
+            buf[i + 3]
 
 
 def tile_to_bgr(tile: bytearray) -> bytearray:

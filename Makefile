@@ -9,7 +9,7 @@ venv:
 	@echo "Virtual environment created!"
 
 install:
-	$(PYTHON) -m pip install mlx-2.2-py3-none-any.whl:warn
+	$(PYTHON) -m pip install mlx-2.2-py3-none-any.whl
 	$(PYTHON) -m pip install -r requirements.txt
 
 build:

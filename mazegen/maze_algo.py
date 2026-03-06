@@ -28,15 +28,18 @@ def parse_config(filename: str) -> dict:
             parse[key] = value
     return parse
 
+
 def validate_config(config: dict) -> None:
     w, h = config["WIDTH"], config["HEIGHT"]
     ex, ey = config["ENTRY"]
     xx, xy = config["EXIT"]
     try:
         if not (0 <= ey < h and 0 <= ex < w):
-            raise ValueError(f"ENTRY ({ex},{ey}) out of bounds for {w}×{h} grid")
+            raise ValueError(
+                f"ENTRY ({ex},{ey}) out of bounds for {w}×{h} grid")
         if not (0 <= xy < h and 0 <= xx < w):
-            raise ValueError(f"EXIT ({xx},{xy}) out of bounds for {w}×{h} grid")
+            raise ValueError(
+                f"EXIT ({xx},{xy}) out of bounds for {w}×{h} grid")
         if config["ENTRY"] == config["EXIT"]:
             raise ValueError("ENTRY and EXIT must be different")
     except ValueError as e:
@@ -58,7 +61,7 @@ class MazeGenerator:
 
     def generate(self, perfect: bool = True) -> list[list[int]]:
         """
-            genrate the maze and return the grid
+        genrate the maze and return the grid
         """
         self._generate(0, 0)
         if not perfect:
@@ -67,24 +70,25 @@ class MazeGenerator:
         self._place_42_pattern()
         return self.maze
 
-
     def solve(self, entry: tuple, exit_: tuple) -> str:
         """
-            solve the maze and return the path string
+        solve the maze and return the path string
         """
         return self._solve_maze(entry[1], entry[0], exit_[1], exit_[0])
 
-    def write(self, entry:tuple, exit_: tuple, path: str, filename: str) -> None:
+    def write(
+            self,
+            entry: tuple, exit_: tuple, path: str, filename: str) -> None:
         """
-            write the maze to a file
+        write the maze to a file
         """
-        self._write_output(entry[1], entry[0], exit_[1], exit_[0], path, filename)
+        self._write_output(
+            entry[1], entry[0], exit_[1], exit_[0], path, filename)
 
     # private
 
     def _create_grid(self) -> list[list[int]]:
         return [[15 for _ in range(self.width)] for _ in range(self.height)]
-
 
     def _place_42_pattern(self) -> bool:
         if self.height < 7 or self.width < 11:
@@ -93,10 +97,27 @@ class MazeGenerator:
 
         # centre the pattern
         start_row = (self.height - 7) // 2
-        start_col = (self.width  - 9) // 2
+        start_col = (self.width - 9) // 2
         pattern = [
-            (0,0),(1,0),(2,0),(2,1),(1,2),(2,2),(3,2),(4,2),  # "4"
-            (0,4),(0,5),(0,6),(1,6),(2,4),(2,5),(2,6),(3,4),(4,4),(4,5),(4,6),  # "2"
+            (0, 0),
+            (1, 0),
+            (2, 0),
+            (2, 1),
+            (1, 2),
+            (2, 2),
+            (3, 2),
+            (4, 2),  # "4"
+            (0, 4),
+            (0, 5),
+            (0, 6),
+            (1, 6),
+            (2, 4),
+            (2, 5),
+            (2, 6),
+            (3, 4),
+            (4, 4),
+            (4, 5),
+            (4, 6),  # "2"
         ]
 
         for row, col in pattern:
@@ -136,7 +157,6 @@ class MazeGenerator:
                 continue
             self._remove_wall(row, col, direction)
 
-
     def _enforce_borders(self) -> None:
         for c in range(self.width):
             self.maze[0][c] |= NORTH
@@ -145,12 +165,10 @@ class MazeGenerator:
             self.maze[r][0] |= WEST
             self.maze[r][self.width - 1] |= EAST
 
-
-
-    def _generate(self, start_y: int, start_x: int) -> None: 
+    def _generate(self, start_y: int, start_x: int) -> None:
         direction_list = [NORTH, EAST, SOUTH, WEST]
         random.shuffle(direction_list)
-        self.visited[start_y][start_x] = True 
+        self.visited[start_y][start_x] = True
         for direction in direction_list:
             if direction == NORTH:
                 neighbour_y, neighbour_x = start_y - 1, start_x
@@ -161,7 +179,7 @@ class MazeGenerator:
             elif direction == WEST:
                 neighbour_y, neighbour_x = start_y, start_x - 1
             if (
-                0 <= neighbour_y <self.height
+                0 <= neighbour_y < self.height
                 and 0 <= neighbour_x < self.width
                 and not self.visited[neighbour_y][neighbour_x]
             ):
@@ -169,7 +187,7 @@ class MazeGenerator:
                 self._generate(neighbour_y, neighbour_x)
 
     def _reconstruct_path(
-        self, traveled_to: list, exit_y: int, exit_x: int) -> str:
+            self, traveled_to: list, exit_y: int, exit_x: int) -> str:
         path = ""
         y, x = exit_y, exit_x
         while traveled_to[y][x] != "START":
@@ -190,9 +208,8 @@ class MazeGenerator:
         return path[::-1]
 
     def _solve_maze(
-        self, entry_y: int, entry_x: int, exit_y: int, exit_x: int
-        ) -> str:
-        traveled_to = [[None]*self.width for _ in range(self.height)]
+            self, entry_y: int, entry_x: int, exit_y: int, exit_x: int) -> str:
+        traveled_to = [[None] * self.width for _ in range(self.height)]
         queue = deque()
         queue.append((entry_y, entry_x))
         traveled_to[entry_y][entry_x] = "START"
@@ -224,7 +241,6 @@ class MazeGenerator:
                     traveled_to[neighbour_y][neighbour_x] = letter
         return ""
 
-
     def _has_wall(self, cell: int, direction: int) -> bool:
         """Checks whether a cell has a wall in the given direction.
 
@@ -238,15 +254,15 @@ class MazeGenerator:
         """
         return bool(cell & direction)
 
-
-    def _write_output(self,
+    def _write_output(
+        self,
         entry_y: int,
         entry_x: int,
         exit_y: int,
         exit_x: int,
         path: str,
         filename: str,
-        ) -> None:
+    ) -> None:
         if not path:
             raise ValueError("Cannot write maze with empty path")
         with open(filename, "w") as content:
@@ -258,4 +274,3 @@ class MazeGenerator:
             content.write(f"{entry_x},{entry_y}\n")
             content.write(f"{exit_x},{exit_y}\n")
             content.write(f"{path}\n")
-

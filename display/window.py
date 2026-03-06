@@ -512,7 +512,8 @@ class MazeDisplay:
             fill_rect(buf, x0, y0, x1, y1, pr, pg, pb, sl, max_y)
 
     def draw_portal(
-            self, cx: int, cy: int, color: tuple, sl: int, max_y: int, tile_px: int) -> None:
+            self, cx: int,
+            cy: int, color: tuple, sl: int, max_y: int, tile_px: int) -> None:
         """
         draw a filled circle marking an entry or exit portal.
 

@@ -6,9 +6,10 @@ from display.window import MazeDisplay
 
 
 def regenerate():
-   run(config, seed=random.randint(0, 999999))
+    run(config, seed=random.randint(0, 999999))
 
-def run(config: dict, seed: int = None) -> None: 
+
+def run(config: dict, seed: int = None) -> None:
     enter_maze = config["ENTRY"]
     exit_maze = config["EXIT"]
     if seed is None:
@@ -19,7 +20,7 @@ def run(config: dict, seed: int = None) -> None:
     mg.generate(perfect=config["PERFECT"])
     path = mg.solve(enter_maze, exit_maze)
     if not path:
-        main(seed=random.randint(0, 999999))
+        run(config, seed=random.randint(0, 999999))
         return
     print("Maze generated!")
     mg.write(
@@ -28,6 +29,7 @@ def run(config: dict, seed: int = None) -> None:
         path,
         config["OUTPUT_FILE"],
     )
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

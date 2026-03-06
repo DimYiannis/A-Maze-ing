@@ -1,0 +1,11 @@
+__pycache__
+
+.venv/
+venv/
+env/
+
+.mypy_cache/
+
+.pytest_cache/
+
+mazegen.egg-info

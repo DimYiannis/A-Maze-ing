@@ -84,6 +84,10 @@ def fill_rect(
         sl:      Size line — row stride in bytes from mlx_get_data_addr().
         clip_y1: Bottom clipping boundary, defaults to WIN_H.
     """
+    x0 = max(0, x0)
+    x1 = min(WIN_W, x1)
+    if x0 >= x1:
+        return
     row = bytes([b, g, r, 255] * (x1 - x0))
     for y in range(max(0, y0), min(clip_y1, y1)):
         buf[y * sl + x0 * 4: y * sl + x1 * 4] = row
@@ -454,6 +458,7 @@ class MazeDisplay:
             ENTRY_COLOR,
             sl,
             max_y,
+            tile_px
         )
         self.draw_portal(
             xc * tile_px + self.offset_x + half,
@@ -461,6 +466,7 @@ class MazeDisplay:
             EXIT_COLOR,
             sl,
             max_y,
+            tile_px
         )
 
         # HUD background drawn into image
@@ -506,7 +512,7 @@ class MazeDisplay:
             fill_rect(buf, x0, y0, x1, y1, pr, pg, pb, sl, max_y)
 
     def draw_portal(
-            self, cx: int, cy: int, color: tuple, sl: int, max_y: int) -> None:
+            self, cx: int, cy: int, color: tuple, sl: int, max_y: int, tile_px: int) -> None:
         """
         draw a filled circle marking an entry or exit portal.
 
@@ -522,9 +528,10 @@ class MazeDisplay:
         """
         buf = self.buf
         r, g, b = color
-        for dy2 in range(-14, 15):
-            for dx2 in range(-14, 15):
-                if dx2 * dx2 + dy2 * dy2 <= 14 * 14:
+        radius = max(4, tile_px // 4)
+        for dy2 in range(-radius, radius + 1):
+            for dx2 in range(-radius, radius + 1):
+                if dx2 * dx2 + dy2 * dy2 <= radius * radius:
                     fill_rect(
                         buf,
                         cx + dx2,

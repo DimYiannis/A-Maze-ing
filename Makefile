@@ -1,3 +1,4 @@
+VENV = venv
 CONFIG = config.txt
 AMAZING = a_maze_ing.py
 PYTHON = python3

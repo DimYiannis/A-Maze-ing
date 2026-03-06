@@ -1,6 +1,6 @@
 import sys
 import random
-from maze.maze_algo import main as generate
+from mazegen.maze_algo import main as generate
 from display.window import MazeDisplay
 
 

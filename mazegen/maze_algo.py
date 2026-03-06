@@ -1,6 +1,7 @@
 import random
 from collections import deque
 import sys
+from typing import Any, Optional
 
 NORTH = 1
 EAST = 2
@@ -8,8 +9,10 @@ SOUTH = 4
 WEST = 8
 
 
-def parse_config(filename: str) -> dict:
-    parse = {}
+def parse_config(filename: str) -> dict[str, Any]:
+    parse: dict[str, Any] = {}
+    key: str
+    value: int | str | tuple[int, int] | bool
     with open(filename, "r") as file:
         for line in file:
             if line.startswith("#"):
@@ -51,7 +54,7 @@ def validate_config(config: dict) -> None:
 
 
 class MazeGenerator:
-    def __init__(self, width: int, height: int, seed: int = None):
+    def __init__(self, width: int, height: int, seed: Optional[int] = None):
         self.width = width
         self.height = height
         self.seed = seed if seed is not None else random.randint(0, 999999)
@@ -209,8 +212,10 @@ class MazeGenerator:
 
     def _solve_maze(
             self, entry_y: int, entry_x: int, exit_y: int, exit_x: int) -> str:
-        traveled_to = [[None] * self.width for _ in range(self.height)]
-        queue = deque()
+        traveled_to: list[
+            list[Optional[str]]] = [[
+                None] * self.width for _ in range(self.height)]
+        queue: deque[tuple[int, int]] = deque()
         queue.append((entry_y, entry_x))
         traveled_to[entry_y][entry_x] = "START"
         direction_list = {NORTH: "N", EAST: "E", SOUTH: "S", WEST: "W"}

@@ -17,47 +17,47 @@ def test_wall_west() -> None:
     assert has_wall(9, WEST)
 
 
-def test_add_wall_north():
+def test_add_wall_north() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 1, 0, NORTH)
     assert maze[1][0] & NORTH
     assert maze[0][0] & SOUTH
 
 
-def test_add_wall_east():
+def test_add_wall_east() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 0, 1, EAST)
     assert maze[0][1] & EAST
     assert maze[0][2] & WEST
 
 
-def test_add_wall_south():
+def test_add_wall_south() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 1, 0, SOUTH)
     assert maze[1][0] & SOUTH
     assert maze[2][0] & NORTH
 
 
-def test_add_wall_west():
+def test_add_wall_west() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 0, 1, WEST)
     assert maze[0][1] & WEST
     assert maze[0][0] & EAST
 
 
-def test_no_neighbour_north():
+def test_no_neighbour_north() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 0, 0, NORTH)
     assert maze[0][0] & NORTH
 
 
-def test_no_neighbour_east():
+def test_no_neighbour_east() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 0, len(maze[0]) - 1, EAST)
     assert maze[0][len(maze[0]) - 1] & EAST
 
 
-def test_remove_wall_north():
+def test_remove_wall_north() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 1, 0, NORTH)
     assert maze[1][0] & NORTH
@@ -66,7 +66,7 @@ def test_remove_wall_north():
     assert not (maze[0][0] & SOUTH)
 
 
-def test_remove_wall_east():
+def test_remove_wall_east() -> None:
     maze = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
     add_wall(maze, 0, 1, EAST)
     assert maze[0][1] & EAST

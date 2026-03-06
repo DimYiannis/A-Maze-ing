@@ -1,15 +1,16 @@
 import sys
 import random
+from typing import Optional
 from mazegen import MazeGenerator
 from mazegen.maze_algo import parse_config, validate_config
 from display.window import MazeDisplay
 
 
-def regenerate():
+def regenerate() -> None:
     run(config, seed=random.randint(0, 999999))
 
 
-def run(config: dict, seed: int = None) -> None:
+def run(config: dict, seed: Optional[int] = None) -> None:
     enter_maze = config["ENTRY"]
     exit_maze = config["EXIT"]
     if seed is None:
@@ -38,6 +39,6 @@ if __name__ == "__main__":
     filename = sys.argv[1]
     config = parse_config(filename)
     validate_config(config)
-    run(config)
+    run(config, config["SEED"])
     display = MazeDisplay("maze.txt", on_regen=regenerate)
     display.run()

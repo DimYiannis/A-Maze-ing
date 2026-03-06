@@ -10,10 +10,10 @@ run:
 	$(PYTHON) $(AMAZING) $(CONFIG)
 
 debug:
-	$(PYTHON) -m pdb $(PYTHON) $(AMAZING) $(CONFIG)
+	$(PYTHON) -m pdb $(AMAZING) $(CONFIG)
 
 lint:
-	flake8 $(SRC_DIR)
+	flake8 $(SRC_DIR) --exclude .venv
 	mypy $(SRC_DIR) \
 		--warn-return-any \
 		--warn-unused-ignores \
@@ -21,7 +21,7 @@ lint:
 		--disallow-untyped-defs \
 		--check-untyped-defs
 
-lint_strict:
+lint-strict:
 	flake8 $(SRC_DIR)
 	mypy $(SRC_DIR) --strict
 
@@ -32,5 +32,5 @@ clean:
 	@echo "clean done"
 
 
-.PHONY: install run debug lint lint_strict test clean
+.PHONY: install run debug lint lint-strict test clean
 

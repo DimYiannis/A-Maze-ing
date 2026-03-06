@@ -10,6 +10,21 @@ WEST = 8
 
 
 def parse_config(filename: str) -> dict[str, Any]:
+    """
+        Parse a maze configuration file into a dictionary.
+
+        Reads key=value pairs from a text file, skipping blank lines
+        and lines starting with '#'. Converts values to the appropriate
+        Python type based on the key name.
+
+        Args:
+            filename: Path to the configuration file.
+
+        Returns:
+            Dictionary with keys WIDTH, HEIGHT, SEED (int),
+            ENTRY, EXIT (tuple[int, int]), PERFECT (bool),
+            and OUTPUT_FILE (str).
+    """
     parse: dict[str, Any] = {}
     key: str
     value: int | str | tuple[int, int] | bool
@@ -33,6 +48,16 @@ def parse_config(filename: str) -> dict[str, Any]:
 
 
 def validate_config(config: dict) -> None:
+    """
+        Validate maze configuration values.
+
+        Checks that entry and exit coordinates are within the maze bounds
+        and that they are not the same cell. Prints an error and exits
+        with code 1 if any check fails.
+
+        Args:
+            config: Parsed configuration dictionary from parse_config().
+    """
     w, h = config["WIDTH"], config["HEIGHT"]
     ex, ey = config["ENTRY"]
     xx, xy = config["EXIT"]
@@ -55,6 +80,15 @@ def validate_config(config: dict) -> None:
 
 class MazeGenerator:
     def __init__(self, width: int, height: int, seed: Optional[int] = None):
+        """
+            Initialise the maze grid and random seed.
+
+            Args:
+                width:  Number of columns.
+                height: Number of rows.
+                seed:   Optional random seed. If None, a random seed is chosen
+                    and stored in self.seed for reproducibility.
+        """
         self.width = width
         self.height = height
         self.seed = seed if seed is not None else random.randint(0, 999999)
@@ -64,7 +98,20 @@ class MazeGenerator:
 
     def generate(self, perfect: bool = True) -> list[list[int]]:
         """
-        genrate the maze and return the grid
+            Generate the maze and return the grid.
+
+            -runs the recursive backtracker
+            -optionally adds loops for an imperfect maze
+            -enforces outer border walls
+            -places the '42' pattern at the centre.
+
+            Args:
+                perfect: If True, generates a perfect maze (one path between
+                    any two cells). If False, removes extra walls to
+                    create loops and multiple paths.
+
+            Returns:
+                2D list of integers representing the maze grid.
         """
         self._generate(0, 0)
         if not perfect:
@@ -75,7 +122,16 @@ class MazeGenerator:
 
     def solve(self, entry: tuple, exit_: tuple) -> str:
         """
-        solve the maze and return the path string
+            Solve the maze and return the path string.
+                -finds the shortest path from entry to exit using BFS.
+
+            Args:
+                entry:  Entry cell as (x, y) tuple.
+                exit_:  Exit cell as (x, y) tuple.
+
+            Returns:
+                String of N/E/S/W direction letters from entry to exit,
+                or empty string if no path exists.
         """
         return self._solve_maze(entry[1], entry[0], exit_[1], exit_[0])
 
@@ -83,7 +139,13 @@ class MazeGenerator:
             self,
             entry: tuple, exit_: tuple, path: str, filename: str) -> None:
         """
-        write the maze to a file
+            Write the maze to a file.
+
+            Args:
+                entry:    Entry cell as (x, y) tuple.
+                exit_:    Exit cell as (x, y) tuple.
+                path:     Solution path string from solve().
+                filename: Output file path.
         """
         self._write_output(
             entry[1], entry[0], exit_[1], exit_[0], path, filename)
@@ -91,9 +153,25 @@ class MazeGenerator:
     # private
 
     def _create_grid(self) -> list[list[int]]:
+        """
+            Create a fully walled grid.
+
+            Returns:
+                2D list of size height × width filled with 15 (all walls set).
+        """
         return [[15 for _ in range(self.width)] for _ in range(self.height)]
 
     def _place_42_pattern(self) -> bool:
+        """
+            Place the '42' pattern at the centre of the maze.
+
+            Sets a pixel-art '4' and '2' made of fully walled cells (value 15)
+            at the centre of the grid. These cells are also marked as visited
+            so the generator never carves through them.
+
+            Returns:
+                True if the pattern was placed, False if the maze is too small.
+        """
         if self.height < 7 or self.width < 11:
             print("Maze is too small to display 42")
             return False
@@ -132,6 +210,17 @@ class MazeGenerator:
         return True
 
     def _remove_wall(self, yindex: int, xindex: int, direction: int) -> None:
+        """
+            Remove a wall between a cell and its neighbour.
+
+            Clears the wall bit on both sides — the cell and the neighbouring
+            cell — to keep the maze coherent.
+
+            Args:
+                yindex:    Row of the cell.
+                xindex:    Column of the cell.
+                direction: Wall to remove (NORTH, EAST, SOUTH or WEST).
+        """
         self.maze[yindex][xindex] &= ~direction
         if direction == NORTH and yindex > 0:
             self.maze[yindex - 1][xindex] &= ~SOUTH
@@ -143,6 +232,13 @@ class MazeGenerator:
             self.maze[yindex][xindex - 1] &= ~EAST
 
     def _add_loops(self) -> None:
+        """
+            Remove random interior walls to create loops in the maze.
+
+            Removes approximately 10% of walls to create an imperfect maze
+            with multiple paths between cells. Never removes outer border
+            walls or walls belonging to the '42' pattern cells.
+        """
         num_loops = (self.width * self.height) // 10
         for _ in range(num_loops):
             row = random.randint(0, self.height - 1)
@@ -161,6 +257,14 @@ class MazeGenerator:
             self._remove_wall(row, col, direction)
 
     def _enforce_borders(self) -> None:
+        """
+            Ensure all outer border walls are always present.
+
+            Sets wall bits on all cells at the edges of the maze facing
+            outward.
+            Called after generation and loop-adding to restore
+            any border walls that were accidentally removed.
+        """
         for c in range(self.width):
             self.maze[0][c] |= NORTH
             self.maze[self.height - 1][c] |= SOUTH
@@ -169,6 +273,18 @@ class MazeGenerator:
             self.maze[r][self.width - 1] |= EAST
 
     def _generate(self, start_y: int, start_x: int) -> None:
+        """
+            Recursively carve passages using depth-first search.
+
+            -marks the current cell as visited
+            -shuffles the 4 directions
+            -recursively visits each unvisited neighbour by removing
+            the wall between them.
+
+            Args:
+                start_y: Row of the current cell.
+                start_x: Column of the current cell.
+        """
         direction_list = [NORTH, EAST, SOUTH, WEST]
         random.shuffle(direction_list)
         self.visited[start_y][start_x] = True
@@ -191,6 +307,22 @@ class MazeGenerator:
 
     def _reconstruct_path(
             self, traveled_to: list, exit_y: int, exit_x: int) -> str:
+        """
+            Reconstruct the solution path by backtracking from the exit.
+
+            Walks backwards from the exit cell to the entry using the
+            direction stored in traveled_to at each cell, building the
+            forward path string.
+
+            Args:
+                traveled_to: 2D grid storing the direction taken to reach
+                    each cell, or "START" for the entry cell.
+                exit_y:      Row of the exit cell.
+                exit_x:      Column of the exit cell.
+
+            Returns:
+                String of N/E/S/W letters from entry to exit.
+        """
         path = ""
         y, x = exit_y, exit_x
         while traveled_to[y][x] != "START":
@@ -212,6 +344,21 @@ class MazeGenerator:
 
     def _solve_maze(
             self, entry_y: int, entry_x: int, exit_y: int, exit_x: int) -> str:
+        """
+            Find the shortest path from entry to exit using BFS.
+
+            Explores the maze level by level from the entry cell, following
+            only open walls. Returns the path as soon as the exit is reached.
+
+            Args:
+                entry_y: Row of the entry cell.
+                entry_x: Column of the entry cell.
+                exit_y:  Row of the exit cell.
+                exit_x:  Column of the exit cell.
+
+            Returns:
+                String of N/E/S/W direction letters, or "" if no path exists.
+        """
         traveled_to: list[
             list[Optional[str]]] = [[
                 None] * self.width for _ in range(self.height)]
@@ -268,6 +415,27 @@ class MazeGenerator:
         path: str,
         filename: str,
     ) -> None:
+        """
+            Write the maze grid and metadata to a file.
+
+            Format:
+                - One hex character per cell, one row per line
+                - Blank line separator
+                - Entry coordinates as x,y
+                - Exit coordinates as x,y
+                - Solution path string
+
+            Args:
+                entry_y:  Row of the entry cell.
+                entry_x:  Column of the entry cell.
+                exit_y:   Row of the exit cell.
+                exit_x:   Column of the exit cell.
+                path:     Solution path string from _solve_maze().
+                filename: Output file path.
+
+            Raises:
+                ValueError: If path is empty.
+        """
         if not path:
             raise ValueError("Cannot write maze with empty path")
         with open(filename, "w") as content:

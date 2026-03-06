@@ -14,12 +14,12 @@ display/window.py
 """
 
 import os
-from typing import Optional
+from typing import Callable, Optional
 
 try:
     import mlx as mlx_module
 except ModuleNotFoundError:
-    mlx_module = None  # type: ignore[assignment]
+    mlx_module = None
 
 from .parser import parse_maze_file
 from .tiles import TILE_SIZE, THEMES, build_tile_cache
@@ -234,7 +234,10 @@ class MazeDisplay:
     """
 
     def __init__(
-            self, filepath: str, theme_idx: int = 0, on_regen=None) -> None:
+            self,
+            filepath: str,
+            theme_idx: int = 0,
+            on_regen: Optional[Callable] = None) -> None:
         self.filepath = filepath
         self.on_regen = on_regen
         self.maze = parse_maze_file(filepath)
@@ -303,7 +306,7 @@ class MazeDisplay:
             self._dirty = True
         elif keycode == KEY_3:
             self.theme_idx = (self.theme_idx + 1) % len(THEMES)
-            self._tile_cache = {}
+            self._tile_cache: dict[int, bytearray] = {}
             self._dirty = True
         elif keycode in (KEY_PLUS, KEY_PLUS2):
             self.zoom = min(ZOOM_MAX, round(self.zoom + ZOOM_STEP, 1))
@@ -372,6 +375,7 @@ class MazeDisplay:
         or theme changes.
         """
         tile_px = self.tile_px()
+        self._cached_tile_px: int = 0
         if self._tile_cache and self._cached_tile_px == tile_px:
             return
         base = build_tile_cache(THEMES[self.theme_idx])
@@ -406,9 +410,9 @@ class MazeDisplay:
 
         # Background
         fl = THEMES[self.theme_idx].floor
-        row = bytes([fl[2], fl[1], fl[0], 255] * WIN_W)
+        bg_row = bytes([fl[2], fl[1], fl[0], 255] * WIN_W)
         for y in range(WIN_H):
-            buf[y * sl: y * sl + WIN_W * 4] = row
+            buf[y * sl: y * sl + WIN_W * 4] = bg_row
 
         # Tiles
         for r in range(self.maze.rows):
@@ -490,6 +494,8 @@ class MazeDisplay:
             sl:      Size line — row stride in bytes from mlx_get_data_addr().
             max_y:   Bottom clipping boundary (top of HUD bar).
         """
+        if self.buf is None:
+            return
         buf = self.buf
         pr, pg, pb = 80, 160, 255
         half = tile_px // 2
@@ -527,6 +533,8 @@ class MazeDisplay:
             sl:    Size line — row stride in bytes from mlx_get_data_addr().
             max_y: Bottom clipping boundary (top of HUD bar).
         """
+        if self.buf is None:
+            return
         buf = self.buf
         r, g, b = color
         radius = max(4, tile_px // 4)

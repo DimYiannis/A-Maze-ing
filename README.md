@@ -64,6 +64,16 @@ PERFECT=True      # True = perfect maze, False = maze with loops
 OUTPUT_FILE=maze.txt  # output file path
 ```
 
+## Resources
+
+- [Maze generation algorithms — Wikipedia](https://en.wikipedia.org/wiki/Maze_generation_algorithm)
+- [Python packaging guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
+- [miniLibX documentation](https://harm-smits.github.io/42docs/libs/minilibx)
+- [mypy documentation](https://mypy.readthedocs.io)
+- [Python packaging — pyproject.toml](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/)
+- [setuptools documentation](https://setuptools.pypa.io)
+
+
 ## Maze Generation Algorithm
 
 This project uses a **recursive backtracker** (depth-first search).
@@ -134,12 +144,3 @@ uv build --out-dir .
 - uv for package management
 - Claude (Anthropic) — used for code review, debugging, explaining concepts,
   docstrings, and refactoring suggestions throughout the project
-
-## Resources
-
-- [Maze generation algorithms — Wikipedia](https://en.wikipedia.org/wiki/Maze_generation_algorithm)
-- [Python packaging guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
-- [miniLibX documentation](https://harm-smits.github.io/42docs/libs/minilibx)
-- [mypy documentation](https://mypy.readthedocs.io)
-- [Python packaging — pyproject.toml](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/)
-- [setuptools documentation](https://setuptools.pypa.io)

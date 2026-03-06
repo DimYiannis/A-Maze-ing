@@ -32,12 +32,19 @@ def validate_config(config: dict) -> None:
     w, h = config["WIDTH"], config["HEIGHT"]
     ex, ey = config["ENTRY"]
     xx, xy = config["EXIT"]
-    if not (0 <= ey < h and 0 <= ex < w):
-        raise ValueError(f"ENTRY ({ex},{ey}) out of bounds for {w}×{h} grid")
-    if not (0 <= xy < h and 0 <= xx < w):
-        raise ValueError(f"EXIT ({xx},{xy}) out of bounds for {w}×{h} grid")
-    if config["ENTRY"] == config["EXIT"]:
-        raise ValueError("ENTRY and EXIT must be different")
+    try:
+        if not (0 <= ey < h and 0 <= ex < w):
+            raise ValueError(f"ENTRY ({ex},{ey}) out of bounds for {w}×{h} grid")
+        if not (0 <= xy < h and 0 <= xx < w):
+            raise ValueError(f"EXIT ({xx},{xy}) out of bounds for {w}×{h} grid")
+        if config["ENTRY"] == config["EXIT"]:
+            raise ValueError("ENTRY and EXIT must be different")
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"{e}")
+        sys.exit(1)
 
 
 class MazeGenerator:
@@ -53,8 +60,11 @@ class MazeGenerator:
         """
             genrate the maze and return the grid
         """
-        self._place_42_pattern()
         self._generate(0, 0)
+        if not perfect:
+            self._add_loops()
+        self._enforce_borders()
+        self._place_42_pattern()
         return self.maze
 
 
@@ -107,6 +117,35 @@ class MazeGenerator:
             self.maze[yindex + 1][xindex] &= ~NORTH
         if direction == WEST and xindex > 0:
             self.maze[yindex][xindex - 1] &= ~EAST
+
+    def _add_loops(self) -> None:
+        num_loops = (self.width * self.height) // 10
+        for _ in range(num_loops):
+            row = random.randint(0, self.height - 1)
+            col = random.randint(0, self.width - 1)
+            if self.maze[row][col] == 15 and self.visited[row][col]:
+                continue
+            direction = random.choice([NORTH, EAST, SOUTH, WEST])
+            if direction == NORTH and row == 0:
+                continue
+            if direction == EAST and row == self.height - 1:
+                continue
+            if direction == SOUTH and col == 0:
+                continue
+            if direction == WEST and col == self.width - 1:
+                continue
+            self._remove_wall(row, col, direction)
+
+
+    def _enforce_borders(self) -> None:
+        for c in range(self.width):
+            self.maze[0][c] |= NORTH
+            self.maze[self.height - 1][c] |= SOUTH
+        for r in range(self.height):
+            self.maze[r][0] |= WEST
+            self.maze[r][self.width - 1] |= EAST
+
+
 
     def _generate(self, start_y: int, start_x: int) -> None: 
         direction_list = [NORTH, EAST, SOUTH, WEST]
@@ -208,7 +247,8 @@ class MazeGenerator:
         path: str,
         filename: str,
         ) -> None:
-
+        if not path:
+            raise ValueError("Cannot write maze with empty path")
         with open(filename, "w") as content:
             for row in range(self.height):
                 for col in range(self.width):
@@ -234,8 +274,11 @@ def main(seed: int = None) -> None:
     print(f"Seed: {seed}")
     sys.setrecursionlimit(config["WIDTH"] * config["HEIGHT"] * 2)
     mg = MazeGenerator(config["WIDTH"], config["HEIGHT"], seed)
-    mg.generate(perfect=config["PERFECT"]) 
+    mg.generate(perfect=config["PERFECT"])
     path = mg.solve(enter_maze, exit_maze)
+    if not path:
+        main(seed=random.randint(0, 999999))
+        return
     print("Maze generated!")
     mg.write(
         enter_maze,

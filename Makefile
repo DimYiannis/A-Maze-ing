@@ -4,6 +4,7 @@ PYTHON = python3
 SRC_DIR = .
 
 install:
+	$(PYTHON) -m pip install ./mlx_CLXV-2.2/
 	$(PYTHON) -m pip install -r requirements.txt
 
 build:

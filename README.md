@@ -17,22 +17,19 @@ The project is split into two parts:
 ### Requirements
 - Python 3.10+
 - miniLibX (mlx_CLXV 2.2)
-
+### VENV
+```bash
+make venv
+```
 ### Installation
-\`\`\`bash
+```bash
 make install
-\`\`\`
+```
 
-### Build package from source
-\`\`\`bash
-pip install setuptools build
+### Build package
+```bash
 make build
-\`\`\`
-
-### Install the package
-\`\`\`bash
-pip install mazegen-1.0.0-py3-none-any.whl
-\`\`\````
+```
 
 ### Run
 ```bash

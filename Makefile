@@ -3,8 +3,12 @@ AMAZING = a_maze_ing.py
 PYTHON = python3
 SRC_DIR = .
 
+venv:
+	python3 -m venv $(VENV)
+	@echo "Virtual environment created!"
+
 install:
-	$(PYTHON) -m pip install ./mlx_CLXV-2.2/
+	$(PYTHON) -m pip install mlx-2.2-py3-none-any.whl:warn
 	$(PYTHON) -m pip install -r requirements.txt
 
 build:

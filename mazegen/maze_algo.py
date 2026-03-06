@@ -259,34 +259,3 @@ class MazeGenerator:
             content.write(f"{exit_x},{exit_y}\n")
             content.write(f"{path}\n")
 
-
-def main(seed: int = None) -> None:
-    if len(sys.argv) != 2:
-        print("Usage: python3 a_mazing.py config.txt")
-        return
-    filename = sys.argv[1]
-    config = parse_config(filename)
-    validate_config(config)
-    enter_maze = config["ENTRY"]
-    exit_maze = config["EXIT"]
-    if seed is None:
-        seed = config.get("SEED", random.randint(0, 999999))
-    print(f"Seed: {seed}")
-    sys.setrecursionlimit(config["WIDTH"] * config["HEIGHT"] * 2)
-    mg = MazeGenerator(config["WIDTH"], config["HEIGHT"], seed)
-    mg.generate(perfect=config["PERFECT"])
-    path = mg.solve(enter_maze, exit_maze)
-    if not path:
-        main(seed=random.randint(0, 999999))
-        return
-    print("Maze generated!")
-    mg.write(
-        enter_maze,
-        exit_maze,
-        path,
-        config["OUTPUT_FILE"],
-    )
-
-
-if __name__ == "__main__":
-    main()

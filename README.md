@@ -19,9 +19,20 @@ The project is split into two parts:
 - miniLibX (mlx_CLXV 2.2)
 
 ### Installation
-```bash
-pip install -r requirements.txt
-```
+\`\`\`bash
+make install
+\`\`\`
+
+### Build package from source
+\`\`\`bash
+pip install setuptools build
+make build
+\`\`\`
+
+### Install the package
+\`\`\`bash
+pip install mazegen-1.0.0-py3-none-any.whl
+\`\`\````
 
 ### Run
 ```bash
@@ -130,3 +141,5 @@ uv build --out-dir .
 - [Python packaging guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
 - [miniLibX documentation](https://harm-smits.github.io/42docs/libs/minilibx)
 - [mypy documentation](https://mypy.readthedocs.io)
+- [Python packaging — pyproject.toml](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/)
+- [setuptools documentation](https://setuptools.pypa.io)

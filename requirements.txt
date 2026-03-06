@@ -1,0 +1,4 @@
+mlx==2.2
+flake8
+mypy
+pytest

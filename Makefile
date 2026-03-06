@@ -6,6 +6,9 @@ SRC_DIR = .
 install:
 	$(PYTHON) -m pip install -r requirements.txt
 
+build:
+	uv build --out-dir .
+
 run:
 	$(PYTHON) $(AMAZING) $(CONFIG)
 
@@ -22,7 +25,7 @@ lint:
 		--check-untyped-defs
 
 lint-strict:
-	flake8 $(SRC_DIR)
+	flake8 $(SRC_DIR)  --exclude .venv
 	mypy $(SRC_DIR) --strict
 
 clean:
@@ -32,5 +35,5 @@ clean:
 	@echo "clean done"
 
 
-.PHONY: install run debug lint lint-strict test clean
+.PHONY: install run debug lint lint-strict test clean build
 

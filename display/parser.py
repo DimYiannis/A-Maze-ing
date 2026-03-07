@@ -1,7 +1,7 @@
 """
-display/parser.py
+    display/parser.py
 
-Parses the maze output .txt file into a MazeData dataclass.
+    parses the maze output .txt file into a MazeData dataclass.
 
 """
 
@@ -13,17 +13,17 @@ from dataclasses import dataclass, field
 @dataclass
 class MazeData:
     """
-    all data parsed from a maze output file.
+        all data parsed from a maze output file.
 
-    attributes:
-        grid:            2D list of hex values (0–15) per cell.
-        rows:            Number of rows.
-        cols:            Number of columns.
-        entry:           Entry cell as (row, col).
-        exit_:           Exit cell as (row, col).
-        path:            Solution as ordered list of (row, col).
-        path_cells:      Set of path cells for O(1) lookup.
-        pattern42_cells: fully-walled (0xF) cells for the '42' pattern.
+        attributes:
+            grid:            2D list of hex values (0–15) per cell.
+            rows:            Number of rows.
+            cols:            Number of columns.
+            entry:           Entry cell as (row, col).
+            exit_:           Exit cell as (row, col).
+            path:            Solution as ordered list of (row, col).
+            path_cells:      Set of path cells for O(1) lookup.
+            pattern42_cells: fully-walled (0xF) cells for the '42' pattern.
     """
 
     grid: list[list[int]]
@@ -36,10 +36,11 @@ class MazeData:
     pattern42_cells: set[tuple[int, int]] = field(default_factory=set)
 
     def __post_init__(self) -> None:
-        """it precomputes:
-        path_cells → fast lookup for path positions
-        pattern42_cells → fast lookup for cells with value 15
-        so that later rendering becomes faster.
+        """
+            it precomputes:
+            path_cells → fast lookup for path positions
+            pattern42_cells → fast lookup for cells with value 15
+            so that later rendering becomes faster.
         """
         self.path_cells = set(self.path)
         self.pattern42_cells = {
@@ -66,18 +67,19 @@ def parse_coord(
     rows: int,
     cols: int,
 ) -> tuple[int, int]:
-    """Parse an 'x,y' string into (row, col).
+    """
+        Parse an 'x,y' string into (row, col).
 
-    The file uses x = column, y = row convention.
+        The file uses x = column, y = row convention.
 
-    args:
-        raw:   raw string e.g. '0,0' or '19,14'.
-        label: name used in error messages.
-        rows:  grid height for bounds check.
-        cols:  grid width for bounds check.
+        args:
+            raw:   raw string e.g. '0,0' or '19,14'.
+            label: name used in error messages.
+            rows:  grid height for bounds check.
+            cols:  grid width for bounds check.
 
-    returns:
-        (row, col) tuple.
+        returns:
+            (row, col) tuple.
 
     """
     parts = raw.strip().split(",")
@@ -100,16 +102,17 @@ def path_from_directions(
     rows: int,
     cols: int,
 ) -> list[tuple[int, int]]:
-    """convert a direction string into an ordered list of cells.
+    """
+        convert a direction string into an ordered list of cells.
 
-    args:
-        start:      starting (row, col).
-        directions: string of N/S/E/W characters.
-        rows:       grid height for bounds checking.
-        cols:       grid width for bounds checking.
+        args:
+            start:      starting (row, col).
+            directions: string of N/S/E/W characters.
+            rows:       grid height for bounds checking.
+            cols:       grid width for bounds checking.
 
-    returns:
-        list of (row, col) from start through each step.
+        returns:
+            list of (row, col) from start through each step.
 
     """
     path: list[tuple[int, int]] = [start]
@@ -128,13 +131,13 @@ def path_from_directions(
 # Parsing
 def parse_maze_file(filepath: str) -> MazeData:
     """
-    parse a maze output file and return a MazeData instance.
+        parse a maze output file and return a MazeData instance.
 
-    args:
-        filepath: Path to the .txt maze output file.
+        args:
+            filepath: Path to the .txt maze output file.
 
-    returns:
-        populated MazeData instance.
+        returns:
+            populated MazeData instance.
     """
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"Maze file not found: '{filepath}'")

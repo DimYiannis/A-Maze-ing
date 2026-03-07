@@ -29,8 +29,8 @@ ENTRY_COLOR = (0, 200, 80)  # green
 EXIT_COLOR = (255, 80, 20)  # orange
 
 # window settings
-WIN_W: int = 1400
-WIN_H: int = 900
+WIN_W: int = 2000
+WIN_H: int = 1500
 PAN_STEP: int = 40
 ZOOM_STEP: float = 0.1
 ZOOM_MIN: float = 0.2
@@ -294,7 +294,6 @@ class MazeDisplay:
 
     # input
     def on_key(self, keycode: int, _param: object) -> None:
-        pythondef on_key(self, keycode: int, _param: object) -> None:
         """
             Handle keyboard input and update display state.
 
@@ -403,7 +402,7 @@ class MazeDisplay:
         usable_h = WIN_H - HUD_H
         zoom_x = WIN_W / (self.maze.cols * TILE_SIZE)
         zoom_y = usable_h / (self.maze.rows * TILE_SIZE)
-        self.zoom = round(min(zoom_x, zoom_y, 1.5), 1)
+        self.zoom = round(min(zoom_x, zoom_y, 0.7), 1)
         tile_px = self.tile_px()
         self.offset_x = (WIN_W - self.maze.cols * tile_px) // 2
         self.offset_y = (usable_h - self.maze.rows * tile_px) // 2

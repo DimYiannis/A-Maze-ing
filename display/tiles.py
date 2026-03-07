@@ -72,7 +72,7 @@ def _fill(
     r, g, b = color  # tuple unpacking
     row = bytes([r, g, b, 255] * (x1 - x0))  # build one row of pixels at once
     for y in range(y0, y1):
-        i = (y * TILE_SIZE + x0) * 4  # calc start index
+        i = (y * TILE_SIZE + x0) * 4  # calc start index (exact byte)
         buf[i: i + len(row)] = row  # copy whole row
 
 
@@ -110,7 +110,7 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
         _fill(buf, 0, wt, T, wt + 2, theme.wall_hi)  # inner edge
     if s:
         _fill(buf, 0, T - wt, T, T, theme.wall)
-        #              x0    y0      x1   y1    color
+        #          x0   y0        x1   y1    color
         _fill(buf, 0, T - wt - 2, T, T - wt, theme.wall_hi)
     if e:
         _fill(buf, T - wt, 0, T, T, theme.wall)

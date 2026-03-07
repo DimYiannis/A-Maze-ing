@@ -4,7 +4,7 @@
     MazeDisplay — main window using mlx_CLXV.
 
     pixel writing:
-        mlx_get_data_addr() returns a memoryview cast to bytes ('B').
+        mlx_get_data_addr() returns a memoryview cast to bytes.
         Each pixel is 4 bytes at offset (y * size_line + x * 4).
         Byte order: Blue, Green, Red, 0xFF  (alpha must be 255).
 
@@ -126,6 +126,13 @@ def blend_rect(
             sl:     Size line — row stride in bytes from mlx_get_data_addr().
             max_y:  Bottom clipping boundary (top of HUD bar).
     """
+    # blend formula: new = foreground * t + background * (1 - t)
+
+    # a = 120
+    # t = 120/255 = 0.47
+    # new_blue  = 204 * 0.47 + existing_blue  * 0.53
+    # new_green = 204 * 0.47 + existing_green * 0.53
+    # new_red   = 255 * 0.47 + existing_red   * 0.53
     t = a / 255.0
     for y in range(max(0, y0), min(max_y, y1)):
         for x in range(max(0, x0), min(WIN_W, x1)):
@@ -266,7 +273,8 @@ class MazeDisplay:
             initialise MLX, open the window and start the event loop.
 
             -creates the MLX connection, window and image buffer
-            -registers three hooks — keyboard input, window close,per-frame rendering.
+            -registers three hooks — keyboard input, window close,
+            per-frame rendering.
             -Calls mlx_loop() which never returns
                 handing control to MLX for the rest of the program's lifetime.
         """
@@ -275,8 +283,12 @@ class MazeDisplay:
 
         mlx_ptr = m.mlx_init()
         win_ptr = m.mlx_new_window(mlx_ptr, WIN_W, WIN_H, "A-Maze-ing")
-        # Image covers only the maze area (above HUD)
+
+        # off-screen image buffer — same size as the maze area (above HUD)
+        # draw to this image first, then blit it to the window
         img_ptr = m.mlx_new_image(mlx_ptr, WIN_W, WIN_H)
+
+        # direct pointer to the image's raw pixel bytes as a memoryview
         buf, _bpp, sl, _fmt = m.mlx_get_data_addr(img_ptr)
 
         self.mlx_ptr = mlx_ptr
@@ -286,10 +298,10 @@ class MazeDisplay:
         self.sl = sl
 
         self.fit_to_window()
-
-        m.mlx_key_hook(win_ptr, self.on_key, None)
-        m.mlx_hook(win_ptr, 17, 0, self.on_close, None)
-        m.mlx_loop_hook(mlx_ptr, self.on_loop, None)
+        # callbacks mlx calls them when events occur
+        m.mlx_key_hook(win_ptr, self.on_key, None)  # keypress
+        m.mlx_hook(win_ptr, 33, 0, self.on_close, None)  # window close button
+        m.mlx_loop_hook(mlx_ptr, self.on_loop, None)  # loop for every frame
         m.mlx_loop(mlx_ptr)
 
     # input
@@ -368,7 +380,8 @@ class MazeDisplay:
 
             Rendering order:
                 1. mlx_sync      — acquire write access to the image buffer.
-                2. render()      — composite maze, path, portals and HUD background.
+                2. render()      — composite maze, path, portals and
+                                    HUD background.
                 3. mlx_put_image — blit the image buffer to the window.
                 4. draw_hud_text — draw text directly onto the window on top.
 

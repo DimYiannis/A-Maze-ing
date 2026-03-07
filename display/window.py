@@ -1,5 +1,5 @@
 """
-display/window.py
+    display/window.py
 
     MazeDisplay — main window using mlx_CLXV.
 
@@ -67,22 +67,22 @@ def fill_rect(
     clip_y1: int = WIN_H,
 ) -> None:
     """
-    fill a rectangle in the MLX buffer with a solid colour.
+        fill a rectangle in the MLX buffer with a solid colour.
 
-    Builds one row of BGRX pixels and stamps it into the buffer
-    row by row using slice assignment.
+        Builds one row of BGRX pixels and stamps it into the buffer
+        row by row using slice assignment.
 
-    args:
-        buf:     MLX image buffer (BGRX, row-major).
-        x0:      Left column (inclusive).
-        y0:      Top row (inclusive).
-        x1:      Right column (exclusive).
-        y1:      Bottom row (exclusive).
-        r:       Red (0-255).
-        g:       Green (0-255).
-        b:       Blue (0-255).
-        sl:      Size line — row stride in bytes from mlx_get_data_addr().
-        clip_y1: Bottom clipping boundary, defaults to WIN_H.
+        args:
+            buf:     MLX image buffer (BGRX, row-major).
+            x0:      Left column (inclusive).
+            y0:      Top row (inclusive).
+            x1:      Right column (exclusive).
+            y1:      Bottom row (exclusive).
+            r:       Red (0-255).
+            g:       Green (0-255).
+            b:       Blue (0-255).
+            sl:      Size line — row stride in bytes from mlx_get_data_addr().
+            clip_y1: Bottom clipping boundary, defaults to WIN_H.
     """
     x0 = max(0, x0)
     x1 = min(WIN_W, x1)
@@ -106,24 +106,25 @@ def blend_rect(
     sl: int,
     max_y: int,
 ) -> None:
-    """Blend a filled rectangle over the existing buffer contents.
+    """
+        Blend a filled rectangle over the existing buffer contents.
 
-    Unlike _fill_rect which overwrites pixels completely, this mixes
-    the new colour with whatever is already in the buffer using the
-    alpha value as a blend factor.
+        Unlike _fill_rect which overwrites pixels completely, this mixes
+        the new colour with whatever is already in the buffer using the
+        alpha value as a blend factor.
 
-    Args:
-        buf:    MLX image buffer (BGRX, row-major).
-        x0:     Left column (inclusive).
-        y0:     Top row (inclusive).
-        x1:     Right column (exclusive).
-        y1:     Bottom row (exclusive).
-        r:      Red (0-255).
-        g:      Green (0-255).
-        b:      Blue (0-255).
-        a:      Opacity (0=fully transparent, 255=fully opaque).
-        sl:     Size line — row stride in bytes from mlx_get_data_addr().
-        max_y:  Bottom clipping boundary (top of HUD bar).
+        Args:
+            buf:    MLX image buffer (BGRX, row-major).
+            x0:     Left column (inclusive).
+            y0:     Top row (inclusive).
+            x1:     Right column (exclusive).
+            y1:     Bottom row (exclusive).
+            r:      Red (0-255).
+            g:      Green (0-255).
+            b:      Blue (0-255).
+            a:      Opacity (0=fully transparent, 255=fully opaque).
+            sl:     Size line — row stride in bytes from mlx_get_data_addr().
+            max_y:  Bottom clipping boundary (top of HUD bar).
     """
     t = a / 255.0
     for y in range(max(0, y0), min(max_y, y1)):
@@ -137,17 +138,17 @@ def blend_rect(
 
 def tile_to_bgr(tile: bytearray) -> bytearray:
     """
-    Convert a tile from RGBA to BGRX byte order for MLX.
+        Convert a tile from RGBA to BGRX byte order for MLX.
 
-    tiles.py produces pixels as [R, G, B, A].
-    MLX expects pixels as [B, G, R, 255].
-    This swaps the red and blue channels and sets alpha to 255.
+        tiles.py produces pixels as [R, G, B, A].
+        MLX expects pixels as [B, G, R, 255].
+        This swaps the red and blue channels and sets alpha to 255.
 
-    args:
-        tile: RGBA bytearray from tiles.py.
+        args:
+            tile: RGBA bytearray from tiles.py.
 
-    redeturns:
-        new bytearray with pixels in BGRX order.
+        redeturns:
+            new bytearray with pixels in BGRX order.
     """
     out = bytearray(len(tile))
     for i in range(0, len(tile), 4):
@@ -168,22 +169,22 @@ def blit_tile(
     max_y: int,
 ) -> None:
     """
-    copy a tile into the MLX buffer at position (dx, dy).
+        copy a tile into the MLX buffer at position (dx, dy).
 
-    handles clipping on all edges — left, right, top and bottom.
-    only the visible portion of the tile is copied, row by row,
-    using slice assignment for fast memory copies.
+        handles clipping on all edges — left, right, top and bottom.
+        only the visible portion of the tile is copied, row by row,
+        using slice assignment for fast memory copies.
 
-    args:
-        buf:     MLX image buffer (BGRX, row-major).
-        tile:    BGRX tile bytearray from the tile cache.
-        dx:      Destination x in pixels (can be negative if tile
-        is off-screen left).
-        dy:      Destination y in pixels (can be negative if tile
-        is off-screen top).
-        tile_px: Tile width and height in pixels at current zoom.
-        sl:      Size line — row stride in bytes from mlx_get_data_addr().
-        max_y:   Bottom clipping boundary (top of HUD bar).
+        args:
+            buf:     MLX image buffer (BGRX, row-major).
+            tile:    BGRX tile bytearray from the tile cache.
+            dx:      Destination x in pixels (can be negative if tile
+            is off-screen left).
+            dy:      Destination y in pixels (can be negative if tile
+            is off-screen top).
+            tile_px: Tile width and height in pixels at current zoom.
+            sl:      Size line — row stride in bytes from mlx_get_data_addr().
+            max_y:   Bottom clipping boundary (top of HUD bar).
     """
     src_x0 = max(0, -dx)
     src_x1 = min(tile_px, WIN_W - dx)
@@ -202,18 +203,18 @@ def blit_tile(
 
 def scale_tile(src: bytearray, target_px: int) -> bytearray:
     """
-    resize a tile to target_px × target_px using nearest-neighbour scaling.
+        resize a tile to target_px × target_px using nearest-neighbour scaling.
 
-    for each pixel in the destination, maps back to the nearest pixel
-    in the source using a ratio. No blending — just picks the closest
-    pixel. Used when zoom changes to a size other than TILE_SIZE.
+        for each pixel in the destination, maps back to the nearest pixel
+        in the source using a ratio. No blending — just picks the closest
+        pixel. Used when zoom changes to a size other than TILE_SIZE.
 
-    args:
-        src:       BGRX tile bytearray at TILE_SIZE × TILE_SIZE.
-        target_px: Target width and height in pixels.
+        args:
+            src:       BGRX tile bytearray at TILE_SIZE × TILE_SIZE.
+            target_px: Target width and height in pixels.
 
-    returns:
-        New bytearray of size target_px × target_px × 4 (BGRX).
+        returns:
+            New bytearray of size target_px × target_px × 4 (BGRX).
     """
     dst = bytearray(target_px * target_px * 4)
     ratio = TILE_SIZE / target_px
@@ -229,8 +230,8 @@ def scale_tile(src: bytearray, target_px: int) -> bytearray:
 
 class MazeDisplay:
     """
-    maze display
-    controls:  2=path  3=colour  4/ESC=quit  +/-=zoom  arrows=pan
+        maze display
+        controls:  2=path  3=colour  4/ESC=quit  +/-=zoom  arrows=pan
     """
 
     def __init__(
@@ -262,12 +263,12 @@ class MazeDisplay:
 
     def run(self) -> None:
         """
-        initialise MLX, open the window and start the event loop.
+            initialise MLX, open the window and start the event loop.
 
-        creates the MLX connection, window and image buffer, then
-        registers three hooks — keyboard input, window close, and
-        per-frame rendering. Calls mlx_loop() which never returns,
-        handing control to MLX for the rest of the program's lifetime.
+            -creates the MLX connection, window and image buffer
+            -registers three hooks — keyboard input, window close,per-frame rendering.
+            -Calls mlx_loop() which never returns
+                handing control to MLX for the rest of the program's lifetime.
         """
         m = mlx_module.Mlx()
         self.m = m
@@ -293,6 +294,31 @@ class MazeDisplay:
 
     # input
     def on_key(self, keycode: int, _param: object) -> None:
+        pythondef on_key(self, keycode: int, _param: object) -> None:
+        """
+            Handle keyboard input and update display state.
+
+            Maps X11 keycodes to display actions. Sets _dirty = True
+            on every handled key to trigger a redraw on the next frame.
+
+            Keybindings:
+                ESC / 4:    Quit the program immediately.
+                1:          Regenerate the maze via on_regen callback,
+                            reload the maze file and refit to window.
+                2:          Toggle the solution path overlay.
+                3:          Cycle to the next colour theme,
+                            invalidates tile cache.
+                + / =:      Zoom in, invalidates tile cache.
+                -:          Zoom out, invalidates tile cache.
+                Up:        Pan the view upward.
+                Down:      Pan the view downward.
+                Left:      Pan the view left.
+                Right:     Pan the view right.
+
+            Args:
+                keycode: X11 keycode of the pressed key.
+                _param:  Unused MLX hook parameter.
+    """
         if keycode in (KEY_ESC, KEY_4):
             os._exit(0)
         elif keycode == KEY_1:
@@ -333,6 +359,23 @@ class MazeDisplay:
         os._exit(0)
 
     def on_loop(self, _param: object) -> None:
+        """
+            Per-frame callback called by mlx_loop on every iteration.
+
+            Skips rendering if nothing has changed (_dirty = False).
+            When dirty, syncs the image buffer for writing, renders the
+            frame, blits the image to the window, then draws HUD text on
+            top. Clears _dirty after rendering.
+
+            Rendering order:
+                1. mlx_sync      — acquire write access to the image buffer.
+                2. render()      — composite maze, path, portals and HUD background.
+                3. mlx_put_image — blit the image buffer to the window.
+                4. draw_hud_text — draw text directly onto the window on top.
+
+            Args:
+                _param: Unused MLX hook parameter.
+        """
         if not self._dirty:
             return
         m = self.m
@@ -348,6 +391,15 @@ class MazeDisplay:
 
     # layout
     def fit_to_window(self) -> None:
+        """
+            Calculate zoom and offsets to centre the maze in the window.
+
+            Computes the largest zoom level that fits the entire maze in the
+            usable area (window height minus HUD bar), capped at 1.5x to avoid
+            over-magnification on small mazes. Then centres the maze both
+            horizontally and vertically. Invalidates the tile cache since the
+            tile size may have changed.
+        """
         usable_h = WIN_H - HUD_H
         zoom_x = WIN_W / (self.maze.cols * TILE_SIZE)
         zoom_y = usable_h / (self.maze.rows * TILE_SIZE)
@@ -359,20 +411,27 @@ class MazeDisplay:
         self._dirty = True
 
     def tile_px(self) -> int:
+        """
+            Calculate the current tile size in pixels based on zoom level.
+
+            Returns:
+            Tile width and height in pixels, minimum 4 to ensure
+            tiles are always visible even at maximum zoom out.
+        """
         return max(4, int(TILE_SIZE * self.zoom))
 
     # cache
     def ensure_cache(self) -> None:
         """
-        Build or rebuild the tile cache for the current zoom and theme.
+            Build or rebuild the tile cache for the current zoom and theme.
 
-        skips rebuilding if the cache is already valid for the current
-        tile size.
-        Otherwise renders all 16 tiles, scales them if zoom
-        has changed, and converts from RGBA to BGRX for MLX.
+            skips rebuilding if the cache is already valid for the current
+            tile size.
+            Otherwise renders all 16 tiles, scales them if zoom
+            has changed, and converts from RGBA to BGRX for MLX.
 
-        The cache is invalidated (set to {}) by _on_key whenever zoom
-        or theme changes.
+            The cache is invalidated (set to {}) by _on_key whenever zoom
+            or theme changes.
         """
         tile_px = self.tile_px()
         self._cached_tile_px: int = 0
@@ -390,15 +449,15 @@ class MazeDisplay:
     # rendering
     def render(self) -> None:
         """
-        composite one frame into the MLX image buffer.
+            composite one frame into the MLX image buffer.
 
-        drawing order (each layer paints over the previous):
-        1. Background  — fill entire buffer with the theme floor colour
-        2. Tiles       — blit each maze cell from the tile cache
-        3. '42' cells  — paint pattern cells with a fixed highlight colour
-        4. Path        — draw solution line if show_path is True
-        5. Portals     — draw entry and exit circles
-        6. HUD         — fill bottom bar and draw divider line
+            drawing order (each layer paints over the previous):
+            1. Background  — fill entire buffer with the theme floor colour
+            2. Tiles       — blit each maze cell from the tile cache
+            3. '42' cells  — paint pattern cells with a fixed highlight colour
+            4. Path        — draw solution line if show_path is True
+            5. Portals     — draw entry and exit circles
+            6. HUD         — fill bottom bar and draw divider line
         """
         if self.buf is None:
             return

@@ -1,15 +1,15 @@
 """
-display/tiles.py
+    display/tiles.py
 
-renders all 16 hex maze tiles as RGBA bytearrays — no external libs.
-Each tile is TILE_SIZE × TILE_SIZE pixels, stored as a flat bytearray
-of R, G, B, A bytes in row-major order.
+    renders all 16 hex maze tiles as RGBA bytearrays — no external libs.
+    Each tile is TILE_SIZE × TILE_SIZE pixels, stored as a flat bytearray
+    of R, G, B, A bytes in row-major order.
 
-tile wall encoding (same as the maze file):
-    Bit 0 (LSB) = North wall
-    Bit 1       = East  wall
-    Bit 2       = South wall
-    Bit 3       = West  wall
+    tile wall encoding (same as the maze file):
+        Bit 0 (LSB) = North wall
+        Bit 1       = East  wall
+        Bit 2       = South wall
+        Bit 3       = West  wall
 """
 
 from typing import NamedTuple
@@ -23,13 +23,14 @@ WALL: int = 15  # wall strip thickness in pixels
 
 
 class Theme(NamedTuple):
-    """A wall colour theme.
+    """
+        A wall colour theme.
 
-    attributes:
-        name:     display name for the HUD.
-        floor:    RGB of the passage floor.
-        wall:     RGB of the wall face.
-        wall_hi:  RGB of the inner edge highlight line.
+        attributes:
+            name:     display name for the HUD.
+            floor:    RGB of the passage floor.
+            wall:     RGB of the wall face.
+            wall_hi:  RGB of the inner edge highlight line.
     """
 
     name: str
@@ -58,15 +59,15 @@ def _fill(
     color: tuple[int, int, int],
 ) -> None:
     """
-    fill a rectangle with a solid opaque colour.
+        fill a rectangle with a solid opaque colour.
 
-    args:
-        buf:   Target bytearray (RGBA, TILE_SIZE stride).
-        x0:    Left column (inclusive).
-        y0:    Top row (inclusive).
-        x1:    Right column (exclusive).
-        y1:    Bottom row (exclusive).
-        color: RGB tuple.
+        args:
+            buf:   Target bytearray (RGBA, TILE_SIZE stride).
+            x0:    Left column (inclusive).
+            y0:    Top row (inclusive).
+            x1:    Right column (exclusive).
+            y1:    Bottom row (exclusive).
+            color: RGB tuple.
     """
     r, g, b = color  # tuple unpacking
     row = bytes([r, g, b, 255] * (x1 - x0))  # build one row of pixels at once
@@ -80,16 +81,16 @@ def _fill(
 
 def render_tile(hv: int, theme: Theme) -> bytearray:
     """
-    render a single maze tile as a flat RGBA bytearray.
+        render a single maze tile as a flat RGBA bytearray.
 
-    each wall is drawn as a solid strip with a small bright line
+        each wall is drawn as a solid strip with a small bright line
 
-    args:
-        hv:    hex value (0–15) showing which walls are closed.
-        theme: color theme.
+        args:
+            hv:    hex value (0–15) showing which walls are closed.
+            theme: color theme.
 
-    returns:
-        bytearray of length TILE_SIZE × TILE_SIZE × 4.
+        returns:
+            bytearray of length TILE_SIZE × TILE_SIZE × 4.
     """
     T = TILE_SIZE
     wt = WALL
@@ -122,14 +123,14 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
 
 def build_tile_cache(theme: Theme) -> dict[int, bytearray]:
     """
-    build all 16 tiles for the given theme.
-    save time to make them once and save them
-    than building them over and over again
+        build all 16 tiles for the given theme.
+        save time to make them once and save them
+        than building them over and over again
 
-    args:
-        class of the theme color for maze
+        args:
+            class of the theme color for maze
 
-    returns:
-        dict with all the tile.
+        returns:
+            dict with all the tile.
     """
     return {hv: render_tile(hv, theme) for hv in range(16)}

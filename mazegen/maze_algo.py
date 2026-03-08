@@ -272,6 +272,62 @@ class MazeGenerator:
             self.maze[r][0] |= WEST
             self.maze[r][self.width - 1] |= EAST
 
+    def _add_wall(self, yindex: int, xindex: int, direction: int) -> None:
+        """
+            Add a wall between a cell and its neighbour.
+
+            Sets the wall bit on both sides — the cell and the neighbouring
+            cell — to keep the maze coherent.
+
+            Args:
+            yindex:    Row of the cell.
+            xindex:    Column of the cell.
+            direction: Wall to add (NORTH, EAST, SOUTH or WEST).
+        """
+        self.maze[yindex][xindex] |= direction
+        if direction == NORTH and yindex > 0:
+            self.maze[yindex - 1][xindex] |= SOUTH
+        if direction == EAST and xindex < self.width - 1:
+            self.maze[yindex][xindex + 1] |= WEST
+        if direction == SOUTH and yindex < self.height - 1:
+            self.maze[yindex + 1][xindex] |= NORTH
+        if direction == WEST and xindex > 0:
+            self.maze[yindex][xindex - 1] |= EAST
+
+    def _has_3x3_opening(self, y: int, x: int) -> bool:
+        """
+            Check whether any 3x3 block of cells around (y, x) is fully open.
+
+            Examines all 3x3 blocks that contain the given cell. A block is
+            considered open if no internal walls exist between its cells —
+            meaning no EAST walls on non-rightmost cells and no SOUTH walls
+            on non-bottommost cells.
+
+            Args:
+            y: Row of the cell to check around.
+            x: Column of the cell to check around.
+
+            Returns:
+            True if a fully open 3x3 block is found, False otherwise.
+        """
+        height = len(self.maze)
+        width = len(self.maze[0])
+        
+        for block_row in range(y - 2, y + 1):
+            for block_col in range(x - 2, x + 1):
+                if block_row < 0 or block_col < 0 or block_row + 2 >= height or block_col + 2 >= width:
+                    continue
+                is_open = True
+                for row in range(block_row, block_row + 3):
+                    for col in range(block_col, block_col + 3):
+                        if self._has_wall(self.maze[row][col], EAST) and col < block_col + 2:
+                            is_open = False
+                        if self._has_wall(self.maze[row][col], SOUTH) and row < block_row + 2:
+                            is_open = False
+                if is_open:
+                    return True
+        return False
+
     def _generate(self, start_y: int, start_x: int) -> None:
         """
             Recursively carve passages using depth-first search.
@@ -302,8 +358,11 @@ class MazeGenerator:
                 and 0 <= neighbour_x < self.width
                 and not self.visited[neighbour_y][neighbour_x]
             ):
-                self._remove_wall(start_y, start_x, direction)
-                self._generate(neighbour_y, neighbour_x)
+                self._remove_wall(start_y, start_x, direction)     
+                if self._has_3x3_opening(start_y, start_x):
+                    self._add_wall(start_y, start_x, direction)
+                else:
+                    self._generate(neighbour_y, neighbour_x)
 
     def _reconstruct_path(
             self, traveled_to: list, exit_y: int, exit_x: int) -> str:

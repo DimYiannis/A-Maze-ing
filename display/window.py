@@ -134,13 +134,15 @@ def blend_rect(
     # new_blue  = 204 * 0.47 + existing_blue  * 0.53
     # new_green = 204 * 0.47 + existing_green * 0.53
     # new_red   = 255 * 0.47 + existing_red   * 0.53
-    t = a / 255.0
+    transparency = a / 255.0
     for y in range(max(0, y0), min(max_y, y1)):
         for x in range(max(0, x0), min(WIN_W, x1)):
             i = y * sl + x * 4
-            buf[i] = int(b * t + buf[i] * (1 - t))
-            buf[i + 1] = int(g * t + buf[i + 1] * (1 - t))
-            buf[i + 2] = int(r * t + buf[i + 2] * (1 - t))
+            buf[i] = int(b * transparency + buf[i] * (1 - transparency))
+            buf[i + 1] = int(
+                g * transparency + buf[i + 1] * (1 - transparency))
+            buf[i + 2] = int(
+                r * transparency + buf[i + 2] * (1 - transparency))
             buf[i + 3]
 
 
@@ -170,8 +172,8 @@ def tile_to_bgr(tile: bytearray) -> bytearray:
 def blit_tile(
     buf: memoryview,
     tile: bytearray,
-    dx: int,
-    dy: int,
+    dest_x: int,
+    dest_y: int,
     tile_px: int,
     sl: int,
     max_y: int,
@@ -186,27 +188,30 @@ def blit_tile(
         args:
             buf:     MLX image buffer (BGRX, row-major).
             tile:    BGRX tile bytearray from the tile cache.
-            dx:      Destination x in pixels (can be negative if tile
+            dest_x:      Destination x in pixels (can be negative if tile
             is off-screen left).
-            dy:      Destination y in pixels (can be negative if tile
+            dest_y:      Destination y in pixels (can be negative if tile
             is off-screen top).
             tile_px: Tile width and height in pixels at current zoom.
             sl:      Size line — row stride in bytes from mlx_get_data_addr().
             max_y:   Bottom clipping boundary (top of HUD bar).
     """
-    src_x0 = max(0, -dx)
-    src_x1 = min(tile_px, WIN_W - dx)
+    src_x0 = max(0, -dest_x)
+    src_x1 = min(tile_px, WIN_W - dest_x)
+
     if src_x0 >= src_x1:
         return
-    dst_x0 = dx + src_x0
-    nb = (src_x1 - src_x0) * 4
-    for ty in range(tile_px):
-        wy = dy + ty
-        if not (0 <= wy < max_y):
+
+    dest_x0 = dest_x + src_x0  # where to start writing in the buffer
+    num_bytes = (src_x1 - src_x0) * 4
+
+    for tile_y in range(tile_px):
+        window_y = dest_y + tile_y  # destination row in window
+        if not (0 <= window_y < max_y):
             continue
-        si = (ty * tile_px + src_x0) * 4
-        di = wy * sl + dst_x0 * 4
-        buf[di: di + nb] = tile[si: si + nb]
+        src_i = (tile_y * tile_px + src_x0) * 4  # start byte in tile
+        dest_i = window_y * sl + dest_x0 * 4  # start byte in window
+        buf[dest_i: dest_i + num_bytes] = tile[src_i: src_i + num_bytes]
 
 
 def scale_tile(src: bytearray, target_px: int) -> bytearray:
@@ -367,10 +372,10 @@ class MazeDisplay:
             self.offset_x -= PAN_STEP
             self._dirty = True
 
-    def on_close(self, _param: object) -> None:
+    def on_close(self, param: object) -> None:
         os._exit(0)
 
-    def on_loop(self, _param: object) -> None:
+    def on_loop(self, param: object) -> None:
         """
             Per-frame callback called by mlx_loop on every iteration.
 

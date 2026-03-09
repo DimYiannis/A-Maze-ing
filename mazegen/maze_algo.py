@@ -113,11 +113,11 @@ class MazeGenerator:
             Returns:
                 2D list of integers representing the maze grid.
         """
+        self._place_42_pattern()
         self._generate(0, 0)
         if not perfect:
             self._add_loops()
         self._enforce_borders()
-        self._place_42_pattern()
         return self.maze
 
     def solve(self, entry: tuple, exit_: tuple) -> str:
@@ -184,7 +184,6 @@ class MazeGenerator:
             (1, 0),
             (2, 0),
             (2, 1),
-            (1, 2),
             (2, 2),
             (3, 2),
             (4, 2),  # "4"

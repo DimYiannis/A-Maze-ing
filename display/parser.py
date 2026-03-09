@@ -6,7 +6,7 @@
 """
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 # data class
@@ -32,8 +32,6 @@ class MazeData:
     entry: tuple[int, int]
     exit_: tuple[int, int]
     path: list[tuple[int, int]]
-    path_cells: set[tuple[int, int]] = field(default_factory=set)
-    pattern42_cells: set[tuple[int, int]] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         """
@@ -42,18 +40,19 @@ class MazeData:
             pattern42_cells → fast lookup for cells with value 15
             so that later rendering becomes faster.
         """
-        self.path_cells = set(self.path)
-        self.pattern42_cells = {
+        self.path_cells: set[tuple[int, int]] = set(self.path)
+        self.pattern42_cells: set[tuple[int, int]] = {
             (r, c)
             for r in range(self.rows)
             for c in range(self.cols)
             if self.grid[r][c] == 0xF
         }
 
-
 # helpers
 
+
 DIRECTION_OFFSETS: dict[str, tuple[int, int]] = {
+    #   (rows, cols)
     "N": (-1, 0),
     "S": (1, 0),
     "E": (0, 1),
@@ -116,15 +115,15 @@ def path_from_directions(
 
     """
     path: list[tuple[int, int]] = [start]
-    r, c = start
+    row, col = start
     for i, ch in enumerate(directions):
         if ch not in DIRECTION_OFFSETS:
             raise ValueError(f"Invalid direction {ch!r} at position {i}")
         dr, dc = DIRECTION_OFFSETS[ch]
-        r, c = r + dr, c + dc
-        if not (0 <= r < rows and 0 <= c < cols):
+        row, col = row + dr, col + dc
+        if not (0 <= row < rows and 0 <= col < cols):
             raise ValueError(f"Direction {ch!r} at step {i} leaves the grid")
-        path.append((r, c))
+        path.append((row, col))
     return path
 
 
@@ -143,37 +142,40 @@ def parse_maze_file(filepath: str) -> MazeData:
         raise FileNotFoundError(f"Maze file not found: '{filepath}'")
 
     try:
-        with open(filepath, "r", encoding="utf-8") as fh:
-            content = fh.read()
+        with open(filepath, "r", encoding="utf-8") as file:
+            content = file.read()
     except OSError as exc:
         raise ValueError(f"Cannot read maze file: {exc}") from exc
 
+    # 2 parts: grid and metadata
     parts = content.strip().split("\n\n")
     if len(parts) != 2:
         raise ValueError(
             f"Expected one blank-line separator, found {len(parts) - 1}")
     grid_part, meta_part = parts
 
-    # Grid
+    # grid
     lines = grid_part.strip().splitlines()
     if not lines:
         raise ValueError("Grid section is empty.")
     rows, cols = len(lines), len(lines[0])
     grid: list[list[int]] = []
 
-    for lineno, line in enumerate(lines, start=1):
+    # render hex to an int for each row for every line
+    for line_index, line in enumerate(lines, start=1):
         if len(line) != cols:
             raise ValueError(
-                f"Row {lineno}: expected {cols} cells, got {len(line)}")
+                f"Row {line_index}: expected {cols} cells, got {len(line)}")
         row: list[int] = []
         for ch in line.upper():
             if ch not in "0123456789ABCDEF":
-                raise ValueError(f"Row {lineno}: invalid hex character {ch!r}")
+                raise ValueError(
+                    f"Row {line_index}: invalid hex character {ch!r}")
+            # turning hex to int
             row.append(int(ch, 16))
         grid.append(row)
 
     # Metadata
-
     meta = meta_part.strip().splitlines()
     if len(meta) < 3:
         raise ValueError(

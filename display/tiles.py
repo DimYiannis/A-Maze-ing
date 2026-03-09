@@ -49,6 +49,7 @@ THEMES: list[Theme] = [
 
 #  Drawing
 
+
 def fill(
     buf: bytearray,
     x0: int,
@@ -72,7 +73,7 @@ def fill(
     for y in range(y0, y1):
         for x in range(x0, x1):
             i = (y * TILE_SIZE + x) * 4  # calc start index (exact byte)
-            buf[i]   = r
+            buf[i] = r
             buf[i+1] = g
             buf[i+2] = b
             buf[i+3] = 255
@@ -81,23 +82,24 @@ def fill(
 # tile rendering
 
 
-def render_tile(hv: int, theme: Theme) -> bytearray:
+def render_tile(digit: int, theme: Theme) -> bytearray:
     """
         render a single maze tile as a flat RGBA bytearray.
 
         each wall is drawn as a solid strip with a small bright line
 
         args:
-            hv:    hex value (0–15) showing which walls are closed.
+            digit:
+                hex value represented -> (0–15) showing which walls are closed.
             theme: color theme.
 
         returns:
             bytearray of length TILE_SIZE × TILE_SIZE × 4.
     """
-    n = (hv >> 0) & 1
-    e = (hv >> 1) & 1
-    s = (hv >> 2) & 1
-    w = (hv >> 3) & 1
+    north = (digit >> 0) & 1
+    east = (digit >> 1) & 1
+    south = (digit >> 2) & 1
+    west = (digit >> 3) & 1
 
     # mutable sequence of bytes
     buf = bytearray(TILE_SIZE * TILE_SIZE * 4)
@@ -106,10 +108,10 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
     fill(buf, 0, 0, TILE_SIZE, TILE_SIZE, theme.floor)
 
     # walls
-    if n:
+    if north:
         fill(buf, 0, 0, TILE_SIZE, WALL, theme.wall)
         fill(buf, 0, WALL, TILE_SIZE, WALL + 2, theme.wall_hi)  # inner edge
-    if s:
+    if south:
         fill(buf, 0, TILE_SIZE - WALL, TILE_SIZE, TILE_SIZE, theme.wall)
         #          x0   y0                 x1       y1          color
         fill(
@@ -119,7 +121,7 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
             TILE_SIZE,
             TILE_SIZE - WALL,
             theme.wall_hi)
-    if e:
+    if east:
         fill(buf, TILE_SIZE - WALL, 0, TILE_SIZE, TILE_SIZE, theme.wall)
         fill(
             buf,
@@ -127,7 +129,7 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
             0, TILE_SIZE - WALL,
             TILE_SIZE,
             theme.wall_hi)
-    if w:
+    if west:
         fill(buf, 0, 0, WALL, TILE_SIZE, theme.wall)
         fill(buf, WALL, 0, WALL + 2, TILE_SIZE, theme.wall_hi)
     return buf
@@ -143,6 +145,6 @@ def build_tile_cache(theme: Theme) -> dict[int, bytearray]:
             class of the theme color for maze
 
         returns:
-            dict with all the tile.
+            dict with all the tiles.
     """
-    return {hv: render_tile(hv, theme) for hv in range(16)}
+    return {digit: render_tile(digit, theme) for digit in range(16)}

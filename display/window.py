@@ -90,6 +90,7 @@ def fill_rect(
         return
     row = bytes([b, g, r, 255] * (x1 - x0))
     for y in range(max(0, y0), min(clip_y1, y1)):
+        # copy with slice
         buf[y * sl + x0 * 4: y * sl + x1 * 4] = row
 
 

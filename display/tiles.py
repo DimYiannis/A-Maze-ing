@@ -74,7 +74,11 @@ def _fill(
     row = bytes([r, g, b, 255] * (x1 - x0))  # build one row of pixels at once
     for y in range(y0, y1):
         i = (y * TILE_SIZE + x0) * 4  # calc start index (exact byte)
-        buf[i: i + len(row)] = row  # copy whole row
+        # copy whole row
+        buf[i]   = r
+        buf[i+1] = g
+        buf[i+2] = b
+        buf[i+3] = 255
 
 
 # tile rendering

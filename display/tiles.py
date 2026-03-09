@@ -47,10 +47,9 @@ THEMES: list[Theme] = [
     Theme("Green", (50, 50, 53), (70, 105, 55), (105, 145, 80)),
 ]
 
-#  Drawing primitives
+#  Drawing
 
-
-def _fill(
+def fill(
     buf: bytearray,
     x0: int,
     y0: int,
@@ -106,16 +105,16 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
     buf = bytearray(TILE_SIZE * TILE_SIZE * 4)
 
     # floor
-    _fill(buf, 0, 0, TILE_SIZE, TILE_SIZE, theme.floor)
+    fill(buf, 0, 0, TILE_SIZE, TILE_SIZE, theme.floor)
 
     # walls
     if n:
-        _fill(buf, 0, 0, TILE_SIZE, WALL, theme.wall)
-        _fill(buf, 0, WALL, TILE_SIZE, WALL + 2, theme.wall_hi)  # inner edge
+        fill(buf, 0, 0, TILE_SIZE, WALL, theme.wall)
+        fill(buf, 0, WALL, TILE_SIZE, WALL + 2, theme.wall_hi)  # inner edge
     if s:
-        _fill(buf, 0, TILE_SIZE - WALL, TILE_SIZE, TILE_SIZE, theme.wall)
+        fill(buf, 0, TILE_SIZE - WALL, TILE_SIZE, TILE_SIZE, theme.wall)
         #          x0   y0                 x1       y1          color
-        _fill(
+        fill(
             buf,
             0,
             TILE_SIZE - WALL - 2,
@@ -123,16 +122,16 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
             TILE_SIZE - WALL,
             theme.wall_hi)
     if e:
-        _fill(buf, TILE_SIZE - WALL, 0, TILE_SIZE, TILE_SIZE, theme.wall)
-        _fill(
+        fill(buf, TILE_SIZE - WALL, 0, TILE_SIZE, TILE_SIZE, theme.wall)
+        fill(
             buf,
             TILE_SIZE - WALL - 2,
             0, TILE_SIZE - WALL,
             TILE_SIZE,
             theme.wall_hi)
     if w:
-        _fill(buf, 0, 0, WALL, TILE_SIZE, theme.wall)
-        _fill(buf, WALL, 0, WALL + 2, TILE_SIZE, theme.wall_hi)
+        fill(buf, 0, 0, WALL, TILE_SIZE, theme.wall)
+        fill(buf, WALL, 0, WALL + 2, TILE_SIZE, theme.wall_hi)
     return buf
 
 

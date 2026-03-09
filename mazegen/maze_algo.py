@@ -312,17 +312,28 @@ class MazeGenerator:
         """
         height = len(self.maze)
         width = len(self.maze[0])
-        
+
         for block_row in range(y - 2, y + 1):
             for block_col in range(x - 2, x + 1):
-                if block_row < 0 or block_col < 0 or block_row + 2 >= height or block_col + 2 >= width:
+                if (
+                    block_row < 0
+                    or block_col < 0
+                    or block_row + 2 >= height
+                    or block_col + 2 >= width
+                ):
                     continue
                 is_open = True
                 for row in range(block_row, block_row + 3):
                     for col in range(block_col, block_col + 3):
-                        if self._has_wall(self.maze[row][col], EAST) and col < block_col + 2:
+                        if (
+                            self._has_wall(self.maze[row][col], EAST)
+                            and col < block_col + 2
+                        ):
                             is_open = False
-                        if self._has_wall(self.maze[row][col], SOUTH) and row < block_row + 2:
+                        if (
+                            self._has_wall(self.maze[row][col], SOUTH)
+                            and row < block_row + 2
+                        ):
                             is_open = False
                 if is_open:
                     return True
@@ -358,7 +369,7 @@ class MazeGenerator:
                 and 0 <= neighbour_x < self.width
                 and not self.visited[neighbour_y][neighbour_x]
             ):
-                self._remove_wall(start_y, start_x, direction)     
+                self._remove_wall(start_y, start_x, direction)
                 if self._has_3x3_opening(start_y, start_x):
                     self._add_wall(start_y, start_x, direction)
                 else:

@@ -70,6 +70,7 @@ def _fill(
             color: RGB tuple.
     """
     r, g, b = color  # tuple unpacking
+    # immutable sequence of bytes
     row = bytes([r, g, b, 255] * (x1 - x0))  # build one row of pixels at once
     for y in range(y0, y1):
         i = (y * TILE_SIZE + x0) * 4  # calc start index (exact byte)
@@ -92,32 +93,42 @@ def render_tile(hv: int, theme: Theme) -> bytearray:
         returns:
             bytearray of length TILE_SIZE × TILE_SIZE × 4.
     """
-    T = TILE_SIZE
-    wt = WALL
     n = (hv >> 0) & 1
     e = (hv >> 1) & 1
     s = (hv >> 2) & 1
     w = (hv >> 3) & 1
 
-    buf = bytearray(T * T * 4)
+    # mutable sequence of bytes
+    buf = bytearray(TILE_SIZE * TILE_SIZE * 4)
 
     # floor
-    _fill(buf, 0, 0, T, T, theme.floor)
+    _fill(buf, 0, 0, TILE_SIZE, TILE_SIZE, theme.floor)
 
     # walls
     if n:
-        _fill(buf, 0, 0, T, wt, theme.wall)
-        _fill(buf, 0, wt, T, wt + 2, theme.wall_hi)  # inner edge
+        _fill(buf, 0, 0, TILE_SIZE, WALL, theme.wall)
+        _fill(buf, 0, WALL, TILE_SIZE, WALL + 2, theme.wall_hi)  # inner edge
     if s:
-        _fill(buf, 0, T - wt, T, T, theme.wall)
-        #          x0   y0        x1   y1    color
-        _fill(buf, 0, T - wt - 2, T, T - wt, theme.wall_hi)
+        _fill(buf, 0, TILE_SIZE - WALL, TILE_SIZE, TILE_SIZE, theme.wall)
+        #          x0   y0                 x1       y1          color
+        _fill(
+            buf,
+            0,
+            TILE_SIZE - WALL - 2,
+            TILE_SIZE,
+            TILE_SIZE - WALL,
+            theme.wall_hi)
     if e:
-        _fill(buf, T - wt, 0, T, T, theme.wall)
-        _fill(buf, T - wt - 2, 0, T - wt, T, theme.wall_hi)
+        _fill(buf, TILE_SIZE - WALL, 0, TILE_SIZE, TILE_SIZE, theme.wall)
+        _fill(
+            buf,
+            TILE_SIZE - WALL - 2,
+            0, TILE_SIZE - WALL,
+            TILE_SIZE,
+            theme.wall_hi)
     if w:
-        _fill(buf, 0, 0, wt, T, theme.wall)
-        _fill(buf, wt, 0, wt + 2, T, theme.wall_hi)
+        _fill(buf, 0, 0, WALL, TILE_SIZE, theme.wall)
+        _fill(buf, WALL, 0, WALL + 2, TILE_SIZE, theme.wall_hi)
     return buf
 
 

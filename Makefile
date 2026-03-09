@@ -5,7 +5,7 @@ PYTHON = python3
 SRC_DIR = .
 
 venv:
-	python3 -m venv $(VENV)
+	python3 -m .venv $(VENV)
 	@echo "Virtual environment created!"
 
 install:

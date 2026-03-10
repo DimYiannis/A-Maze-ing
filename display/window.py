@@ -642,15 +642,15 @@ class MazeDisplay:
         buf = self.buf
         r, g, b = color
         radius = max(4, tile_px // 4)
-        for dy2 in range(-radius, radius + 1):
-            for dx2 in range(-radius, radius + 1):
-                if dx2 * dx2 + dy2 * dy2 <= radius * radius:
+        for y2 in range(-radius, radius + 1):
+            for x2 in range(-radius, radius + 1):
+                if x2 * x2 + y2 * y2 <= radius * radius:
                     fill_rect(
                         buf,
-                        cx + dx2,
-                        cy + dy2,
-                        cx + dx2 + 1,
-                        cy + dy2 + 1,
+                        cx + x2,
+                        cy + y2,
+                        cx + x2 + 1,
+                        cy + y2 + 1,
                         r,
                         g,
                         b,

@@ -17,9 +17,15 @@ The project is split into two parts:
 ### Requirements
 - Python 3.10+
 - miniLibX (mlx_CLXV 2.2)
-### VENV
+### Create venv
 ```bash
 make venv
+```
+### Start venv
+```bash
+source .venv/bin/activate
+```
+```
 ```
 ### Installation
 ```bash

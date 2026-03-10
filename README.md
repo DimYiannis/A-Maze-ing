@@ -26,7 +26,6 @@ make venv
 source .venv/bin/activate
 ```
 ```
-```
 ### Installation
 ```bash
 make install

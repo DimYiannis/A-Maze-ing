@@ -615,9 +615,11 @@ class MazeDisplay:
             center_row_px2 = r2 * tile_px + self.offset_y + half
             if center_col_px1 == center_col_px2:
                 x0, x1 = center_col_px1 - h, center_col_px1 + h
-                y0, y1 = min(center_row_px1, center_row_px2) - h, max(center_row_px1, center_row_px2) + h
+                y0, y1 = (min(center_row_px1, center_row_px2) - h,
+                          max(center_row_px1, center_row_px2) + h)
             else:
-                x0, x1 = min(center_col_px1, center_col_px2) - h, max(center_col_px1, center_col_px2) + h
+                x0, x1 = (min(center_col_px1, center_col_px2) - h,
+                          max(center_col_px1, center_col_px2) + h)
                 y0, y1 = center_row_px1 - h, center_row_px1 + h
             fill_rect(buf, x0, y0, x1, y1, pr, pg, pb, sl, max_y)
 
@@ -634,7 +636,7 @@ class MazeDisplay:
                 cx:    Centre x in pixels.
                 cy:    Centre y in pixels.
                 color: RGB tuple for the circle colour.
-                sl:    Size line — row stride in bytes from mlx_get_data_addr().
+                sl:    Size line — row stride in bytes from mlx_get_data_addr()
                 max_y: Bottom clipping boundary (top of HUD bar).
         """
         if self.buf is None:

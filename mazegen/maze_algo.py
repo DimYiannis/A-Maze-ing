@@ -212,33 +212,46 @@ class MazeGenerator:
         """
             Remove a wall between a cell and its neighbour.
 
-            Clears the wall bit on both sides — the cell and the neighbouring
+            -clears the wall bit on both sides — the cell and the neighbouring
             cell — to keep the maze coherent.
+            -skips removal if the neighbour is a 42 pattern cell
+            to preserve the pattern's wall encoding
 
             Args:
                 yindex:    Row of the cell.
                 xindex:    Column of the cell.
                 direction: Wall to remove (NORTH, EAST, SOUTH or WEST).
         """
-        self.maze[yindex][xindex] &= ~direction
         if direction == NORTH and yindex > 0:
+            if self.visited[yindex - 1][xindex]:
+                return
+            self.maze[yindex][xindex] &= ~NORTH
             self.maze[yindex - 1][xindex] &= ~SOUTH
-        if direction == EAST and xindex < self.width - 1:
+        elif direction == EAST and xindex < self.width - 1:
+            if self.visited[yindex][xindex + 1]:
+                return
+            self.maze[yindex][xindex] &= ~EAST
             self.maze[yindex][xindex + 1] &= ~WEST
-        if direction == SOUTH and yindex < self.height - 1:
+        elif direction == SOUTH and yindex < self.height - 1:
+            if self.visited[yindex + 1][xindex]:
+                return
+            self.maze[yindex][xindex] &= ~SOUTH
             self.maze[yindex + 1][xindex] &= ~NORTH
-        if direction == WEST and xindex > 0:
+        elif direction == WEST and xindex > 0:
+            if self.visited[yindex][xindex - 1]:
+                return
+            self.maze[yindex][xindex] &= ~WEST
             self.maze[yindex][xindex - 1] &= ~EAST
 
     def _add_loops(self) -> None:
         """
             Remove random interior walls to create loops in the maze.
 
-            Removes approximately 10% of walls to create an imperfect maze
+            Removes approximately 5% of walls to create an imperfect maze
             with multiple paths between cells. Never removes outer border
             walls or walls belonging to the '42' pattern cells.
         """
-        num_loops = (self.width * self.height) // 10
+        num_loops = (self.width * self.height) // 5
         for _ in range(num_loops):
             row = random.randint(0, self.height - 1)
             col = random.randint(0, self.width - 1)
@@ -247,11 +260,11 @@ class MazeGenerator:
             direction = random.choice([NORTH, EAST, SOUTH, WEST])
             if direction == NORTH and row == 0:
                 continue
-            if direction == EAST and row == self.height - 1:
+            elif direction == EAST and row == self.height - 1:
                 continue
-            if direction == SOUTH and col == 0:
+            elif direction == SOUTH and col == 0:
                 continue
-            if direction == WEST and col == self.width - 1:
+            elif direction == WEST and col == self.width - 1:
                 continue
             self._remove_wall(row, col, direction)
 

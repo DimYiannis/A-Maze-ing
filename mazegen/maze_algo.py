@@ -247,11 +247,11 @@ class MazeGenerator:
         """
             Remove random interior walls to create loops in the maze.
 
-            Removes approximately 5% of walls to create an imperfect maze
+            Removes approximately 10% of walls to create an imperfect maze
             with multiple paths between cells. Never removes outer border
             walls or walls belonging to the '42' pattern cells.
         """
-        num_loops = (self.width * self.height) // 5
+        num_loops = (self.width * self.height) // 10
         for _ in range(num_loops):
             row = random.randint(0, self.height - 1)
             col = random.randint(0, self.width - 1)

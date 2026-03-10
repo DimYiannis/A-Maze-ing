@@ -34,7 +34,7 @@ WIN_H: int = 1500
 PAN_STEP: int = 40
 ZOOM_STEP: float = 0.1
 ZOOM_MIN: float = 0.2
-ZOOM_MAX: float = 4.0
+ZOOM_MAX: float = 3.0
 
 # X11 keycodes
 KEY_ESC: int = 65307
@@ -51,7 +51,7 @@ KEY_LEFT: int = 65361
 KEY_RIGHT: int = 65363
 
 
-# Pixel helpers
+# Pixel helpers #########################################################
 
 
 def fill_rect(
@@ -134,7 +134,7 @@ def blend_rect(
     # new_blue  = 204 * 0.47 + existing_blue  * 0.53
     # new_green = 204 * 0.47 + existing_green * 0.53
     # new_red   = 255 * 0.47 + existing_red   * 0.53
-    transparency = a / 255.0
+    transparency = a / 255
     for y in range(max(0, y0), min(max_y, y1)):
         for x in range(max(0, x0), min(WIN_W, x1)):
             i = y * sl + x * 4
@@ -160,16 +160,16 @@ def tile_to_bgr(tile: bytearray) -> bytearray:
         redeturns:
             new bytearray with pixels in BGRX order.
     """
-    out = bytearray(len(tile))
+    result = bytearray(len(tile))
     for i in range(0, len(tile), 4):
-        out[i] = tile[i + 2]
-        out[i + 1] = tile[i + 1]
-        out[i + 2] = tile[i]
-        out[i + 3] = 255
-    return out
+        result[i] = tile[i + 2]
+        result[i + 1] = tile[i + 1]
+        result[i + 2] = tile[i]
+        result[i + 3] = 255
+    return result
 
 
-def blit_tile(
+def tile_to_window(
     buf: memoryview,
     tile: bytearray,
     dest_x: int,
@@ -181,8 +181,8 @@ def blit_tile(
     """
         copy a tile into the MLX buffer at position (dx, dy).
 
-        handles clipping on all edges — left, right, top and bottom.
-        only the visible portion of the tile is copied, row by row,
+        handles clipping on all edges for zoom
+        only the visible portion of the tile is copied, row by row
         using slice assignment for fast memory copies.
 
         args:
@@ -272,7 +272,7 @@ class MazeDisplay:
         self.buf: Optional[memoryview] = None
         self.sl: int = 0  # size_line
 
-    # public
+    # public ##########################################################
 
     def run(self) -> None:
         """
@@ -291,26 +291,29 @@ class MazeDisplay:
         win_ptr = m.mlx_new_window(mlx_ptr, WIN_W, WIN_H, "A-Maze-ing")
 
         # off-screen image buffer — same size as the maze area (above HUD)
-        # draw to this image first, then blit it to the window
+        # draw to this image first, then pass it to the window
         img_ptr = m.mlx_new_image(mlx_ptr, WIN_W, WIN_H)
 
-        # direct pointer to the image's raw pixel bytes as a memoryview
-        buf, _bpp, sl, _fmt = m.mlx_get_data_addr(img_ptr)
+        # unpacking to get the direct pointer to the
+        # image's raw pixel bytes as a memoryview
+        buf, bits_p_pixel, sl, format = m.mlx_get_data_addr(img_ptr)
 
         self.mlx_ptr = mlx_ptr
         self.win_ptr = win_ptr
         self.img_ptr = img_ptr
-        self.buf = buf
-        self.sl = sl
+        self.buf = buf  # memoryview for mlx
+        self.sl = sl  # size of line
 
+        # calculate zoom and center offsets
         self.fit_to_window()
+
         # callbacks mlx calls them when events occur
         m.mlx_key_hook(win_ptr, self.on_key, None)  # keypress
         m.mlx_hook(win_ptr, 33, 0, self.on_close, None)  # window close button
         m.mlx_loop_hook(mlx_ptr, self.on_loop, None)  # loop for every frame
         m.mlx_loop(mlx_ptr)
 
-    # input
+    # input #########################################################
     def on_key(self, keycode: int, _param: object) -> None:
         """
             Handle keyboard input and update display state.
@@ -380,34 +383,51 @@ class MazeDisplay:
             Per-frame callback called by mlx_loop on every iteration.
 
             Skips rendering if nothing has changed (_dirty = False).
-            When dirty, syncs the image buffer for writing, renders the
-            frame, blits the image to the window, then draws HUD text on
-            top. Clears _dirty after rendering.
+            When dirty:
+            -syncs the image buffer for writing
+            -renders the frame
+            -puts the image to the window
+            -draws HUD text on top
+            -Clears _dirty after rendering.
 
             Rendering order:
                 1. mlx_sync      — acquire write access to the image buffer.
-                2. render()      — composite maze, path, portals and
+                2. render()      — create maze, path, portals and
                                     HUD background.
-                3. mlx_put_image — blit the image buffer to the window.
+                3. mlx_put_image — place the image buffer to the window.
                 4. draw_hud_text — draw text directly onto the window on top.
 
             Args:
                 _param: Unused MLX hook parameter.
         """
+
+        #   mlx runs 2 things at the same time:
+        #   -GPU/display thread  →  reading  the buffer to show it on screen
+        #   -code    →  writing  the buffer to draw the next frame
+        #
+        #   mlx_sync(SYNC_IMAGE_WRITABLE)
+        #   |
+        #   |- waits until GPU is done reading
+        #   |- locks the buffer
+        #   |- now safe to write → render() runs
+
         if not self._dirty:
             return
         m = self.m
         if m and self.mlx_ptr and self.img_ptr:
+            # get buffer write access - lock
             m.mlx_sync(self.mlx_ptr, m.SYNC_IMAGE_WRITABLE, self.img_ptr)
-        self.render()
+        # build tile cache if needed
+        self.render()  # write
         if m and self.mlx_ptr and self.win_ptr and self.img_ptr:
+            # place buffer into on to the window
             m.mlx_put_image_to_window(
-                self.mlx_ptr, self.win_ptr, self.img_ptr, 0, 0)
+                self.mlx_ptr, self.win_ptr, self.img_ptr, 0, 0)  # show result
             # Draw HUD text AFTER image blit so it appears on top
             self.draw_hud_text()
         self._dirty = False
 
-    # layout
+    # layout ###########################################################
     def fit_to_window(self) -> None:
         """
             Calculate zoom and offsets to centre the maze in the window.
@@ -438,7 +458,7 @@ class MazeDisplay:
         """
         return max(4, int(TILE_SIZE * self.zoom))
 
-    # cache
+    # cache ##############################################################
     def ensure_cache(self) -> None:
         """
             Build or rebuild the tile cache for the current zoom and theme.
@@ -459,12 +479,18 @@ class MazeDisplay:
         scaled = (
             base
             if tile_px == TILE_SIZE
-            else {hv: scale_tile(t, tile_px) for hv, t in base.items()}
+            else {
+                digit: scale_tile(tile, tile_px)
+                for digit, tile in base.items()
+            }
         )
-        self._tile_cache = {hv: tile_to_bgr(t) for hv, t in scaled.items()}
+        self._tile_cache = {
+            digit: tile_to_bgr(tile)
+            for digit, tile in scaled.items()
+        }
         self._cached_tile_px = tile_px
 
-    # rendering
+    # rendering ###########################################################
     def render(self) -> None:
         """
             composite one frame into the MLX image buffer.
@@ -487,6 +513,7 @@ class MazeDisplay:
 
         # Background
         fl = THEMES[self.theme_idx].floor
+        #                b       g     r
         bg_row = bytes([fl[2], fl[1], fl[0], 255] * WIN_W)
         for y in range(WIN_H):
             buf[y * sl: y * sl + WIN_W * 4] = bg_row
@@ -496,7 +523,7 @@ class MazeDisplay:
             for c in range(self.maze.cols):
                 tile = self._tile_cache.get(self.maze.grid[r][c])
                 if tile:
-                    blit_tile(
+                    tile_to_window(
                         buf,
                         tile,
                         c * tile_px + self.offset_x,

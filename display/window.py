@@ -558,19 +558,19 @@ class MazeDisplay:
 
         # portals
         half = tile_px // 2
-        er, ec = self.maze.entry
-        xr, xc = self.maze.exit_
+        entry_row, entry_col = self.maze.entry
+        exit_row, exit_col = self.maze.exit_
         self.draw_portal(
-            ec * tile_px + self.offset_x + half,
-            er * tile_px + self.offset_y + half,
+            entry_col * tile_px + self.offset_x + half,
+            entry_col * tile_px + self.offset_y + half,
             ENTRY_COLOR,
             sl,
             max_y,
             tile_px
         )
         self.draw_portal(
-            xc * tile_px + self.offset_x + half,
-            xr * tile_px + self.offset_y + half,
+            exit_col * tile_px + self.offset_x + half,
+            exit_row * tile_px + self.offset_y + half,
             EXIT_COLOR,
             sl,
             max_y,
@@ -590,7 +590,7 @@ class MazeDisplay:
         between consecutive cells.
 
         for each pair of adjacent path cells, draw a rectangle spanning
-        from one cell centre to the next, with thickness 2h.
+        from one cell centre to the next, with thickness 2h
         corners are seamless because rectangles share endpoints at centres.
 
         args:
@@ -609,33 +609,33 @@ class MazeDisplay:
         for i in range(len(path) - 1):
             r1, c1 = path[i]
             r2, c2 = path[i + 1]
-            ax = c1 * tile_px + self.offset_x + half
-            ay = r1 * tile_px + self.offset_y + half
-            bx = c2 * tile_px + self.offset_x + half
-            by = r2 * tile_px + self.offset_y + half
-            if ax == bx:
-                x0, x1 = ax - h, ax + h
-                y0, y1 = min(ay, by) - h, max(ay, by) + h
+            center_col_px1 = c1 * tile_px + self.offset_x + half
+            center_row_px1 = r1 * tile_px + self.offset_y + half
+            center_col_px2 = c2 * tile_px + self.offset_x + half
+            center_row_px2 = r2 * tile_px + self.offset_y + half
+            if center_col_px1 == center_col_px2:
+                x0, x1 = center_col_px1 - h, center_col_px1 + h
+                y0, y1 = min(center_row_px1, center_row_px2) - h, max(center_row_px1, center_row_px2) + h
             else:
-                x0, x1 = min(ax, bx) - h, max(ax, bx) + h
-                y0, y1 = ay - h, ay + h
+                x0, x1 = min(center_col_px1, center_col_px2) - h, max(center_col_px1, center_col_px2) + h
+                y0, y1 = center_row_px1 - h, center_row_px1 + h
             fill_rect(buf, x0, y0, x1, y1, pr, pg, pb, sl, max_y)
 
     def draw_portal(
             self, cx: int,
             cy: int, color: tuple, sl: int, max_y: int, tile_px: int) -> None:
         """
-        draw a filled circle marking an entry or exit portal.
+            draw a filled circle marking an entry or exit portal.
 
-        uses the equation x² + y² ≤ r² to determine which pixels
-        fall inside the circle, then draws each as a single pixel.
+            formula x² + y² ≤ r² to determine which pixels
+            fall inside the circle, then draws each as a single pixel.
 
-        args:
-            cx:    Centre x in pixels.
-            cy:    Centre y in pixels.
-            color: RGB tuple for the circle colour.
-            sl:    Size line — row stride in bytes from mlx_get_data_addr().
-            max_y: Bottom clipping boundary (top of HUD bar).
+            args:
+                cx:    Centre x in pixels.
+                cy:    Centre y in pixels.
+                color: RGB tuple for the circle colour.
+                sl:    Size line — row stride in bytes from mlx_get_data_addr().
+                max_y: Bottom clipping boundary (top of HUD bar).
         """
         if self.buf is None:
             return
@@ -659,15 +659,17 @@ class MazeDisplay:
                     )
 
     def draw_hud_text(self) -> None:
-        """Draw control hints onto the HUD bar.
+        """
+            draw control hints onto the HUD bar.
 
-        Called after mlx_put_image_to_window so text appears on top
-        of the image. Uses mlx_string_put which writes directly to
-        the window rather than the image buffer.
+            called after mlx_put_image_to_window so text appears on top
+            of the image.
+            uses mlx_string_put which writes directly to
+            the window rather than the image buffer.
 
-        Items are spaced by character count — each character is 8px wide
-        with a 20px gap between items. Stops early if items would overflow
-        the window width.
+            items are spaced by character count — each character is 8px wide
+            with a 20px gap between items. stops early if items would overflow
+            the window width.
         """
         m = self.m
         if not (m and self.mlx_ptr and self.win_ptr):
@@ -687,6 +689,7 @@ class MazeDisplay:
         ]
         x = 12
         for text, color in items:
+            # write directly to the window
             m.mlx_string_put(self.mlx_ptr, self.win_ptr, x, hud_y, color, text)
             x += len(text) * 8 + 20
             if x > WIN_W - 80:

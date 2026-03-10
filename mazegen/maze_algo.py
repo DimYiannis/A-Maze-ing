@@ -529,3 +529,4 @@ class MazeGenerator:
             content.write(f"{entry_x},{entry_y}\n")
             content.write(f"{exit_x},{exit_y}\n")
             content.write(f"{path}\n")
+

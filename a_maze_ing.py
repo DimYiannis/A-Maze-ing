@@ -7,10 +7,29 @@ from display.window import MazeDisplay
 
 
 def regenerate() -> None:
+    """
+        Regenerate the maze with a new random seed.
+
+        Called by MazeDisplay when the user presses key 1.
+        run() with a fresh random seed so the
+        new maze is different from the previous one.
+    """
     run(config, seed=random.randint(0, 999999))
 
 
 def run(config: dict, seed: Optional[int] = None) -> None:
+    """
+        Generate, solve and write the maze to disk.
+
+        Sets the recursion limit based on maze size to prevent
+        stack overflow during DFS generation. If no solution is
+        found, retries with a new random seed.
+
+        Args:
+            config: Parsed configuration dictionary from parse_config().
+            seed:   Random seed for the maze generator. If None, uses
+                    SEED from config or a random value.
+    """
     enter_maze = config["ENTRY"]
     exit_maze = config["EXIT"]
     if seed is None:

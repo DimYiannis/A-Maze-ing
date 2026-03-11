@@ -30,8 +30,6 @@ def run(config: dict, seed: Optional[int] = None) -> None:
             seed:   Random seed for the maze generator. If None, uses
                     SEED from config or a random value.
     """
-    enter_maze = config["ENTRY"]
-    exit_maze = config["EXIT"]
     if seed is None:
         seed = config.get("SEED", random.randint(0, 999999))
     print(f"Seed: {seed}")
@@ -47,17 +45,21 @@ def run(config: dict, seed: Optional[int] = None) -> None:
         enter_maze,
         exit_maze,
         path,
-        config["OUTPUT_FILE"],
+        config["OUTPUT_FILE"]
     )
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python3 a_maze_ing.py config.txt")
-        sys.exit(1)
-    filename = sys.argv[1]
-    config = parse_config(filename)
-    validate_config(config)
-    run(config, config["SEED"])
-    display = MazeDisplay("maze.txt", on_regen=regenerate)
-    display.run()
+    try:
+        if len(sys.argv) != 2:
+            print("Usage: python3 a_maze_ing.py config.txt")
+            sys.exit(1)
+        filename = sys.argv[1]
+        config = parse_config(filename)
+        validate_config(config)
+        run(config, config["SEED"])
+        display = MazeDisplay("maze.txt", on_regen=regenerate)
+        display.run()
+    except Exception:
+        print("wrong config.txt")
+

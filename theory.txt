@@ -1,0 +1,247 @@
+1. Constants — window size, zoom limits, pan step, key codes. Sets the stage for everything else.
+2. Pixel helpers — the low level drawing functions, explain them before the class since the class uses them:
+
+fill_rect — draws solid rectangles into MLX buffer
+blend_rect — same but with transparency
+tile_to_bgr — converts RGBA → BGRX
+scale_tile — nearest neighbour resize
+blit_tile — copies a tile into the buffer with clipping
+
+3. __init__ — what state the class holds and why
+4. run() — MLX init, window, image buffer, hooks, event loop
+5. fit_to_window and tile_px — layout helpers, simple
+6. ensure_cache — tile cache build/rebuild logic
+7. on_key — input handling, how keys map to state changes
+8. on_loop — dirty flag, when and how a frame is triggered
+9. render — the full compositing pipeline, layer by layer
+10. draw_path, draw_portal, draw_hud_text — overlays on top of the base render
+This order makes sense because each section builds on the previous one — you understand the tools before you see them used.
+
+window.py ARCHITECTURE
+═══════════════════════════════════════════════════════════════════
+
+CONSTANTS
+─────────────────────────────────────────────────────────────────
+WIN_W=2000  WIN_H=1500  HUD_H=46  TILE_SIZE=64
+ZOOM_MIN=0.2  ZOOM_MAX=3.0  ZOOM_STEP=0.1  PAN_STEP=40
+KEY_ESC  KEY_1..4  KEY_PLUS  KEY_MINUS  KEY_UP/DOWN/LEFT/RIGHT
+ENTRY_COLOR=(0,200,80)  EXIT_COLOR=(255,80,20)
+
+
+PIXEL HELPERS (module-level functions)
+─────────────────────────────────────────────────────────────────
+fill_rect(buf, x0,y0,x1,y1, r,g,b, sl, clip_y1)
+  │  builds one bytes row → stamps row-by-row into memoryview
+  │  clips: x0=max(0,x0)  x1=min(WIN_W,x1)  y: max(0)..min(clip_y1)
+  └→ used by: render(background,HUD), draw_path, draw_portal
+
+blend_rect(buf, x0,y0,x1,y1, r,g,b,a, sl, max_y)
+  │  pixel-by-pixel alpha blend: new = fg*t + bg*(1-t)  t=a/255
+  └→ used by: render('42' highlight)
+
+tile_to_bgr(tile: bytearray) → bytearray
+  │  RGBA → BGRX  (swap R↔B, set alpha=255)
+  └→ used by: ensure_cache
+
+scale_tile(src, target_px) → bytearray
+  │  nearest-neighbour resize  ratio=TILE_SIZE/target_px
+  │  src pixel → dst pixel via int(ty*ratio), int(tx*ratio)
+  └→ used by: ensure_cache (when zoom ≠ 1.0)
+
+tile_to_window(buf, tile, dest_x,dest_y, tile_px, sl, max_y)
+  │  copies tile into MLX buffer row-by-row with clipping
+  │  src_x0=max(0,-dest_x)  src_x1=min(tile_px, WIN_W-dest_x)
+  │  skips rows outside 0..max_y
+  └→ used by: render(tiles)
+
+
+MAZEDSPLAY CLASS
+─────────────────────────────────────────────────────────────────
+
+  __init__
+  ├── filepath, on_regen        ← constructor args
+  ├── maze = parse_maze_file()  ← MazeData
+  ├── theme_idx, show_path      ← display state
+  ├── zoom=1.0, offset_x/y=0   ← view state
+  ├── tile_cache={},            ← cache state
+  │   cached_tile_px=0
+  ├── dirty=True                ← render flag
+  └── m, mlx_ptr, win_ptr,      ← MLX handles
+      img_ptr, buf, sl          ← (set in run())
+
+
+  run()
+  ├── mlx_module.Mlx()          → m
+  ├── m.mlx_init()              → mlx_ptr
+  ├── m.mlx_new_window()        → win_ptr
+  ├── m.mlx_new_image()         → img_ptr
+  ├── m.mlx_get_data_addr()     → buf(memoryview), sl
+  ├── fit_to_window()
+  ├── mlx_key_hook   → on_key()
+  ├── mlx_hook(33)   → on_close()
+  ├── mlx_loop_hook  → on_loop()
+  └── mlx_loop()                ← never returns
+
+
+  EVENT LOOP
+  ─────────────────────────────────────────────────────────────
+  on_loop() ←── called every frame by mlx_loop
+  │  if not dirty → return      ← skip if nothing changed
+  │  mlx_sync()                 ← acquire write access to buffer
+  │  render()                   ← draw frame into img buffer
+  │  mlx_put_image_to_window()  ← blit buffer to window
+  │  draw_hud_text()            ← text on top of image
+  └── dirty = False
+
+
+  on_key() ←── called on keypress
+  ├── ESC/4  → os._exit(0)
+  ├── 1      → on_regen() → parse_maze_file() → fit_to_window()
+  ├── 2      → show_path toggle
+  ├── 3      → theme_idx++ → tile_cache={}
+  ├── +/-    → zoom±0.1   → tile_cache={}
+  └── arrows → offset_x/y ± PAN_STEP
+               └── all set dirty=True
+
+
+  LAYOUT
+  ─────────────────────────────────────────────────────────────
+  fit_to_window()
+  │  zoom = min(WIN_W/cols*TILE_SIZE, usable_h/rows*TILE_SIZE, 0.7)
+  │  offset_x = (WIN_W - cols*tile_px) // 2
+  └── offset_y = (usable_h - rows*tile_px) // 2
+
+  tile_px() → max(4, int(TILE_SIZE * zoom))
+
+
+  CACHE
+  ─────────────────────────────────────────────────────────────
+  ensure_cache()
+  │  if cache valid → return
+  │  build_tile_cache(theme)     → 16 RGBA bytearrays
+  │  scale_tile() if zoom≠1.0   → resize to tile_px
+  └── tile_to_bgr()              → convert to BGRX
+      stored as dict[int, bytearray]  (hv → pixels)
+
+
+  RENDER PIPELINE  (called each dirty frame)
+  ─────────────────────────────────────────────────────────────
+  render()
+  │
+  ├── 1. BACKGROUND
+  │      bg_row = bytes([B,G,R,255] * WIN_W)
+  │      stamp into every row of buf
+  │
+  ├── 2. TILES
+  │      for each cell (r,c):
+  │        tile = tile_cache[grid[r][c]]
+  │        tile_to_window(dest_x = c*tile_px + offset_x,
+  │                       dest_y = r*tile_px + offset_y)
+  │
+  ├── 3. '42' HIGHLIGHT
+  │      for each pattern42_cell:
+  │        blend_rect(lavender, a=120)
+  │
+  ├── 4. PATH  (if show_path)
+  │      draw_path()
+  │        for each pair of consecutive path cells:
+  │          centre→centre rectangle, thickness h=max(3,tile_px//5)
+  │          vertical:   x±h, y from min to max
+  │          horizontal: x from min to max, y±h
+  │
+  ├── 5. PORTALS
+  │      draw_portal(entry, green)
+  │      draw_portal(exit,  orange)
+  │        circle via x²+y²≤r², radius=max(4,tile_px//4)
+  │
+  └── 6. HUD
+         fill_rect(dark bar at bottom HUD_H px)
+         divider line (1px, brownish)
+
+  draw_hud_text()  ←── called AFTER mlx_put_image (on top)
+     mlx_string_put() for each hint item
+     spaced by len(text)*8 + 20px
+
+
+
+PROGRAM START
+──────────────────────────────────────────────────────────────
+python3 a_maze_ing.py config.txt
+        │
+        ├── parse_config()        read config.txt
+        ├── validate_config()     check bounds
+        ├── run(config)
+        │     ├── MazeGenerator(width, height, seed)
+        │     ├── generate(perfect)
+        │     │     ├── _place_42_pattern()   mark 42 cells as visited
+        │     │     ├── _generate(0,0)        recursive DFS carver
+        │     │     ├── _add_loops()          remove ~10% walls (imperfect)
+        │     │     ├── _fix_open_areas()     break up 3x3 open areas
+        │     │     └── _enforce_borders()    seal outer edges
+        │     ├── solve(entry, exit)          BFS → path string
+        │     └── write(entry, exit, path)    write maze.txt
+        │
+        └── MazeDisplay("maze.txt", on_regen=regenerate).run()
+
+
+MLX INIT (run())
+──────────────────────────────────────────────────────────────
+mlx_init()           connect to X11
+mlx_new_window()     open 2000×1500 window
+mlx_new_image()      create off-screen pixel buffer
+mlx_get_data_addr()  get memoryview + size_line
+fit_to_window()      calculate zoom + center offsets
+register hooks:
+  mlx_key_hook   → on_key()
+  mlx_hook(33)   → on_close()
+  mlx_loop_hook  → on_loop()
+mlx_loop()       ← never returns, MLX takes control
+
+
+EVERY FRAME (on_loop)
+──────────────────────────────────────────────────────────────
+on_loop() called by MLX
+    │
+    ├── dirty=False? → return immediately (nothing to do)
+    │
+    ├── dirty=True?
+    │     ├── mlx_sync()              acquire buffer write access
+    │     ├── render()
+    │     │     ├── ensure_cache()    build/rebuild tile cache if needed
+    │     │     │     ├── build_tile_cache()   render 16 RGBA tiles
+    │     │     │     ├── scale_tile()         resize if zoom ≠ 1.0
+    │     │     │     └── tile_to_bgr()        RGBA → BGRX
+    │     │     │
+    │     │     ├── 1. background     fill entire buffer with floor colour
+    │     │     ├── 2. tiles          blit each cell from tile cache
+    │     │     ├── 3. 42 highlight   blend_rect lavender over pattern cells
+    │     │     ├── 4. path           centre-to-centre rectangles
+    │     │     ├── 5. portals        filled circles at entry/exit
+    │     │     └── 6. HUD bar        dark strip + divider line
+    │     │
+    │     ├── mlx_put_image_to_window()   blit buffer → window
+    │     ├── draw_hud_text()             text on top
+    │     └── dirty = False
+
+
+KEYPRESS (on_key)
+──────────────────────────────────────────────────────────────
+ESC / 4   → os._exit(0)
+
+1  → on_regen()             regenerate maze
+       ├── MazeGenerator(new seed)
+       ├── generate() → solve() → write()
+       ├── parse_maze_file()    reload maze.txt into MazeData
+       ├── fit_to_window()      recalculate zoom + offsets
+       └── dirty = True         → triggers new frame
+
+2  → show_path toggle       dirty = True
+3  → theme_idx++            tile_cache = {}   dirty = True
++  → zoom += 0.1            tile_cache = {}   dirty = True
+-  → zoom -= 0.1            tile_cache = {}   dirty = True
+↑↓←→ → offset_x/y ± 40     dirty = True
+
+
+QUIT
+──────────────────────────────────────────────────────────────
+ESC / 4 / window close  →  os._exit(0)

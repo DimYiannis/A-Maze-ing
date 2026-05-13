@@ -12,6 +12,11 @@ The project is split into two parts:
 - **mazegen** — a reusable Python package for maze generation and solving
 - **display** — an interactive visualiser built on top of miniLibX (mlx_CLXV)
 
+## Preview
+
+<img src="assets/Screenshot from 2026-05-13 14-30-22.png" width="700" alt="Maze view">
+<img src="assets/Screenshot from 2026-05-13 14-30-53.png" width="700" alt="Maze view 2">
+
 ## Instructions
 
 ### Requirements
